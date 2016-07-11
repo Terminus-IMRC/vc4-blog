@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content=
+  "text/html; charset=utf-8">
+  <meta name="viewport" content=
+  "width=device-width, initial-scale=1">
+  <title>QPU: 連続した uniform_read の間に nop を入れる</title>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      jax: [
+        "input/TeX",
+        "output/HTML-CSS"
+      ],
+      extensions: [
+        "tex2jax.js"
+      ],
+      "TeX": {
+        extensions: [
+          "AMSmath.js",
+          "AMSsymbols.js",
+          "noErrors.js",
+          "noUndefined.js"
+        ]
+      },
+      "HTML-CSS": {
+        scale: 85
+      },
+      "tex2jax": {
+        inlineMath: [
+          ['$', '$']
+        ]
+      },
+    });
+  </script>
+  <script type="text/javascript" src=
+  "https://cdn.mathjax.org/mathjax/latest/MathJax.js">
+  </script>
+  <style type="text/css">
+    figure {
+      text-align: center;
+    }
+    figure figcaption {
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>QPU: 連続した uniform_read の間に nop を入れる</h1><br>
+  <h2>概要</h2>
+  <p>16, 32, 64 連続の uniform_read では，間に $7$ 個以上の nop があると命令実行効率がほぼ
+  $1$ になった． しかし，nop の数が多くなると命令キャッシュミスによる性能低下がみられた．</p><br>
+  <h2>実験環境</h2>
+  <p>実験環境として Raspberry Pi 2 Model B を使用した． オーバークロックを施していないため， QPU は
+  $250$ MHz で動作するとした．</p><br>
+  <h2>プログラムの流れ</h2>
+  <p>連続した $n$ 個の uniform_read の間に nop を $ndelay$ 個入れる． 次の
+  uniform_read の連続まで，nop を $4$ 回実行する (branch のため)． これを $300$
+  回繰り返す．</p><br>
+  <h2>結果</h2>
+  <p><a href="#fig1">Fig. 1</a> に命令実行効率を示す． $n=16$, $n=32$ では
+  $ndelay \ge 7$ のとき命令実行効率がほぼ $1$ になった． $n=64$ では $ndelay=0$
+  のとき，命令実行効率が約 $0.6$ まで下がった． また，$n=32$ では $ndelay \ge 15$，$n=64$ では
+  $ndelay \ge 7$ において， 命令キャッシュ溢れによる命令実行効率低下がみられた．</p>
+  <figure id="fig1">
+    <img src="./1.png" alt="Fig. 1: 命令実行効率" width="100%">
+    <figcaption>
+      Fig. 1: 命令実行効率
+    </figcaption>
+  </figure><br>
+  <br>
+  © 2016 Yukimasa Sugizaki. All rights reserved.<br>
+  This work is licensed under a <a rel="license" href=
+  "http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative
+  Commons Attribution-NonCommercial-ShareAlike 4.0 International
+  License</a>.
+</body>
+</html>
