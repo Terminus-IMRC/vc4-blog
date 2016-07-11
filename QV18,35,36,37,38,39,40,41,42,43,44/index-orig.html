@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content=
+  "text/html; charset=utf-8">
+  <meta name="viewport" content=
+  "width=device-width, initial-scale=1">
+  <title>QPU: VPM を使用したメモリ読み込みのオーバーヘッド</title>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      jax: [
+        "input/TeX",
+        "output/HTML-CSS"
+      ],
+      extensions: [
+        "tex2jax.js"
+      ],
+      "TeX": {
+        extensions: [
+          "AMSmath.js",
+          "AMSsymbols.js",
+          "noErrors.js",
+          "noUndefined.js"
+        ]
+      },
+      "HTML-CSS": {
+        scale: 85
+      },
+      "tex2jax": {
+        inlineMath: [
+          ['$', '$']
+        ]
+      },
+    });
+  </script>
+  <script type="text/javascript" src=
+  "https://cdn.mathjax.org/mathjax/latest/MathJax.js">
+  </script>
+  <style type="text/css">
+    figure {
+      text-align: center;
+    }
+    figure figcaption {
+      text-align: center;
+    }
+    img {
+      width: 50%;
+    }
+  </style>
+</head>
+<body>
+
+	<h1>QPU: VPM を使用したメモリ読み込みのオーバーヘッド</h1>
+  <h2>概要</h2>
+  <p>VPM を使用したメモリ読み込みに関する操作 (以下，単に「操作」とする) を以下のように定義する．</p>
+    <dl>
+      <dt>操作1</dt>
+      <dd>VPM DMA Load (VDR) basic setup (VPMVCD_RD_SETUP, id=1)</dd>
+      <dt>操作2</dt>
+      <dd>LD_ADDR のセット</dd>
+      <dt>操作3</dt>
+      <dd>LD_WAIT の読み込み</dd>
+      <dt>操作4</dt>
+      <dd>VPM generic block read setup (VPMVCD_RD_SETUP, id=0)</dd>
+      <dt>操作5</dt>
+      <dd>VPM_READ の読み込み (複数回行う)</dd>
+    </dl>
+  <p>
+    特定の操作後の nop の数を変化させ，
+    その他の操作後に十分な数の nop を入れたとき，
+    操作2と操作4の後の nop の数を変化させたときに命令実行効率の変化が大きかった．
+  </p>
+  <p>
+    特定の操作後の nop の数を変化させ，
+    その他の操作後に nop を入れなかったとき，
+    操作2と操作5の後の nop の数を変化させたときに命令実行効率の変化が大きかった．
+  </p>
+
+	<p>
+	上記より，各操作の後に十分な数の nop があるときは操作2と操作4の後の nop を増やし，
+	各操作が隣接しているときは操作2と操作5の後の nop を増やせば全体の命令実行効率が上がることがわかった．
+	</p>
+   
+  <h2>実験環境</h2>
+  <p>実験環境として Raspberry Pi 3 Model B を使用した．
+    オーバークロックを施していないため，QPU の1コアは $250 / 4 = 62.5$ MHz で動作するとした．</p>
+    
+  <h2>プログラムの流れ</h2>
+  <!-- vb18 の説明 -->
+  <p>
+    事前実験として，各操作後に nop を $ndelay$ 個入れ，これを変化させた．
+    VPM で $32$ bit $\times$ $16$ elements $\times$ $4$ vectors $\times$ $1000$ の要素を読み込み，
+    時間測定誤差を防ぐため，これを $519$ 回繰り返した．
+    これを実験1とする．
+  </p>
+  <!-- vb35, 36, 37, 38, 39 の説明 -->
+  <p>
+    まず，特定の操作後の nop の数 $ndelay$ を変化させ，
+    その他の操作後に十分な数の nop を入れた．
+    実験1の結果より，この数を $40$ とした．
+    この数で十分であることは，$ndelay$ が大きいとき，
+    命令実行効率がほぼ $1$ になることからもわかる．
+    VPM で $32$ bit $\times$ $16$ elements $\times$ $4$ vectors $\times$ $1000$ の要素を読み込み，
+    時間測定誤差を防ぐため，これを $180$ 回繰り返した．
+    これを実験2とする．
+  </p>
+  <!-- vb40, 41, 42, 43, 44 の説明 -->
+  <p>
+    特定の操作後の nop の数 $ndelay$ を変化させ，
+    その他の操作後には nop を入れなかった．
+    VPM で $32$ bit $\times$ $16$ elements $\times$ $4$ vectors $\times$ $1000$ の要素を読み込み，
+    時間測定誤差を防ぐため，これを $180$ 回繰り返した．
+    これを実験3とする．
+  </p>
+  
+  <h2>結果</h2>
+  <p>実験1において，$ndelay = 30$ 程度以上で命令実行効率がほぼ1になった．
+    実験1の命令実行効率を<a href="#fig1">Fig. 1</a>に示す．
+    </p>
+ <p>実験2において，
+    命令実行効率がほぼ $1$ である，
+    つまり命令実行のストールがほとんどないときを
+    オーバーヘッドがみられない場合とした．
+    実験2の命令実行効率を<a href="#fig2">Fig. 2</a>に示す．
+    実験2において，</p>
+    <ul>
+      <li>操作2の後の nop の数を変化させたとき，$ndelay$ が $30$ 未満のとき，
+        操作2のオーバーヘッドがみられた．
+        $ndelay$ が $30$ 以上のとき，操作2のオーバーヘッドはみられなかった．
+      </li>
+      <li>操作4の後の nop の数を変化させたとき，$ndelay$ が $5$ 未満のとき，
+        操作4のオーバヘッドがみられた．
+        $ndelay$ が $5$ 以上のとき，操作4のオーバーヘッドはみられなかった．
+      </li>
+      <li>
+        操作1, 3, 5については，オーバーヘッドみられなかった．
+      </li>
+    </ul>
+  <p>次に，実験3の命令実行効率を<a href="#fig3">Fig. 3</a>に示す．
+  実験3において，</p>
+    <ul>
+      <li>操作2の後の nop の数を変化させたとき，$ndelay$ が $34$ 未満のとき，
+        命令実行効率が $0.9$ 未満だった．</li>
+      <li>操作5の後の nop の数を変化させたとき，$ndelay$ が $96$ 未満のとき，
+        命令実行効率が $0.9$ 未満だった．</li>
+      <li>操作1, 3, 4については，命令キャッシュ溢れが生じたため，
+        命令実行効率が $0.9$ に達する $ndelay$ の値を測定できなかった．</li>
+    </ul>
+  
+  <figure id="fig1">
+    <img src="fig1.png" alt="実験1における命令実行効率">
+    <figcaption>
+      Fig. 1: 実験1における命令実行効率
+    </figcaption>
+  </figure><br>
+  <figure id="fig2">
+    <img src="fig2.png" alt="実験2における命令実行効率">
+    <figcaption>
+      Fig. 2: 実験2における命令実行効率
+    </figcaption>
+  </figure><br>
+  <figure id="fig3">
+    <img src="fig3.png" alt="実験3における命令実行効率">
+    <figcaption>
+      Fig. 3: 実験3における命令実行効率
+    </figcaption>
+  </figure>
+
+  <h2>Copyright notice</h2>
+  <p>© 2016 Yukimasa Sugizaki. All rights reserved.</p>
+  <p>This work is licensed under a <a rel="license" href=
+  "http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative
+  Commons Attribution-NonCommercial-ShareAlike 4.0 International
+  License</a>.</p>
+</body>
+</html>
