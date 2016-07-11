@@ -1,0 +1,5 @@
+Raspberry Pi Compute Module V1.1	0x04000104
+Raspberry Pi Model B 2011.12	0x04000104
+Raspberry Pi 2 Model B V1.1	0x04000140
+Raspberry Pi Zero V1.2	0x04000104
+Raspberry Pi 3 Model B V1.2	0x04000140
