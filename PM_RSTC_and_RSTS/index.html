@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content=
+  "text/html; charset=utf-8">
+  <meta name="viewport" content=
+  "width=device-width, initial-scale=1">
+  <title>Description of PM_RSTC and PM_RSTS</title>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      jax: [
+        "input/TeX",
+        "output/HTML-CSS"
+      ],
+      extensions: [
+        "tex2jax.js"
+      ],
+      "TeX": {
+        extensions: [
+          "AMSmath.js",
+          "AMSsymbols.js",
+          "noErrors.js",
+          "noUndefined.js"
+        ]
+      },
+      "HTML-CSS": {
+        scale: 85
+      },
+      "tex2jax": {
+        inlineMath: [
+          ['$', '$']
+        ]
+      },
+    });
+  </script>
+  <script type="text/javascript" src=
+  "https://cdn.mathjax.org/mathjax/latest/MathJax.js">
+  </script>
+  <style type="text/css">
+    figure {
+      text-align: center;
+    }
+    figure figcaption {
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>Description of PM_RSTC and PM_RSTS</h1>
+	<h2> Description </h2>
+	<table border="1">
+		<tr> <th>Synopsis</th> <th>PM_RSTC</th> <th></th> <th></th></tr>
+		<tr> <th>Bit(s)</th> <th>Field Name</th> <th>Description</th> <th>Type</th></tr>
+		<tr> <td>31:24</td> <td>PASSWD</td> <td>Power Manager password "5a"</td> <td>W</td> </tr>
+		<tr> <td>23:22</td> <td>-</td> <td>Unused</td> <td>R</td> </tr>
+		<tr> <td>21:20</td> <td>HRCFG</td> <td>Hard reset configuration</td> <td>R/W</td> </tr>
+		<tr> <td>19:18</td> <td>-</td> <td>Unused</td> <td>R</td> </tr>
+		<tr> <td>17:16</td> <td>FRCFG</td> <td>Full reset configuration</td> <td>R/W</td> </tr>
+		<tr> <td>15:14</td> <td>-</td> <td>Unused</td> <td>R</td> </tr>
+		<tr> <td>13:12</td> <td>QRCFG</td> <td>Quick reset configuration<br>
+			0 = do not reset PLLs<br>
+			1 = reset PLLs<br>
+			2 = do not reset PLLs<br>
+			3 = reset PLLs</td> <td>R/W</td> </tr>
+		<tr> <td>11:10</td> <td>-</td> <td>Unused</td> <td>R</td> </tr>
+		<tr> <td>9:8</td> <td>SRCFG</td> <td>Software reset configuration<br>
+			0 = no reset<br>
+			1 = quick reset<br>
+			2 = full reset<br>
+			3 = hard reset</td> <td>R/W</td> </tr>
+		<tr> <td>7:6</td> <td>-</td> <td>Unused</td> <td>R</td> </tr>
+		<tr> <td>5:4</td> <td>WRCFG</td> <td>Watchdog reset configuration<br>
+			0 = no reset<br>
+			1 = quick reset<br>
+			2 = full reset<br>
+			3 = hard reset</td> <td>R/W</td> </tr>
+		<tr> <td>3:2</td> <td>-</td> <td>Unused</td> <td>R</td> </tr>
+		<tr> <td>1:0</td> <td>DRCFG</td> <td>Debugger reset configuration<br>
+			0 = no reset<br>
+			1 = quick reset<br>
+			2 = full reset<br>
+			3 = hard reset</td> <td>R/W</td> </tr>
+	</table><br>
+
+	<table border="1">
+		<tr> <th>Synopsis</th> <th>PM_RSTS</th> <th></th> <th></th></tr>
+		<tr> <th>Bit(s)</th> <th>Field Name</th> <th>Description</th> <th>Type</th></tr>
+		<tr> <td>31:24</td> <td>PASSWD</td> <td>Power Manager password "5a"</td> <td>W</td> </tr>
+		<tr> <td>23;13</td> <td>-</td> <td>Unused</td> <td>R</td> </tr>
+		<tr> <td>12</td> <td>HADPOR</td> <td>Had a power-on reset<br>
+			Clear this flag by writing 0 to this field. </td> <td>R/W</td> </tr>
+		<tr> <td>11</td> <td>-</td> <td>Unused</td> <td>R</td> </tr>
+		<tr> <td>10</td> <td>HADSRH</td> <td>Had a software hard reset<br>
+			Clear this flag by writing 0 to this field. </td> <td>R/W</td> </tr>
+		<tr> <td>9</td> <td>HADSRF</td> <td>Had a software full reset<br>
+			Clear this flag by writing 0 to this field. </td> <td>R/W</td> </tr>
+		<tr> <td>8</td> <td>HADSRQ</td> <td>Had a software quick reset<br>
+			Clear this flag by writing 0 to this field. </td> <td>R/W</td> </tr>
+		<tr> <td>7</td> <td>-</td> <td>Unused</td> <td>R</td> </tr>
+		<tr> <td>6</td> <td>HADWRH</td> <td>Had a watchdog hard reset<br>
+			Clear this flag by writing 0 to this field. </td> <td>R/W</td> </tr>
+		<tr> <td>5</td> <td>HADWRF</td> <td>Had a watchdog full reset<br>
+			Clear this flag by writing 0 to this field. </td> <td>R/W</td> </tr>
+		<tr> <td>4</td> <td>HADWRQ</td> <td>Had a watchdog quick reset<br>
+			Clear this flag by writing 0 to this field. </td> <td>R/W</td> </tr>
+		<tr> <td>3</td> <td>-</td> <td>Unused</td> <td>R</td> </tr>
+		<tr> <td>2</td> <td>HADDRH</td> <td>Had a debugger hard reset<br>
+			Clear this flag by writing 0 to this field. </td> <td>R/W</td> </tr>
+		<tr> <td>1</td> <td>HADDRF</td> <td>Had a debugger full reset<br>
+			Clear this flag by writing 0 to this field. </td> <td>R/W</td> </tr>
+		<tr> <td>0</td> <td>HADDRQ</td> <td>Had a debugger quick reset<br>
+			Clear this flag by writing 0 to this field. </td> <td>R/W</td> </tr>
+	</table>
+
+
+  <h2>References</h2>
+		<ul>
+			<li> watchdog: Report reason for last reset <a href="https://github.com/raspberrypi/linux/issues/932#issuecomment-93989581">https://github.com/raspberrypi/linux/issues/932#issuecomment-93989581</a>
+		</ul>
+
+	<h2>Copyright</h2>
+  © 2016 Yukimasa Sugizaki. All rights reserved.<br>
+  This work is licensed under a <a rel="license" href=
+  "http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative
+  Commons Attribution-NonCommercial-ShareAlike 4.0 International
+  License</a>.
+</body>
+</html>
