@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+  <meta http-equiv="content-type" content=
+  "text/html; charset=utf-8">
+  <meta name="viewport" content=
+  "width=device-width, initial-scale=1">
+
+  <title>QPU: DMA読み込みの性能およびwaitの特性</title>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      jax: [
+        "input/TeX",
+        "output/HTML-CSS"
+      ],
+      extensions: [
+        "tex2jax.js"
+      ],
+      "TeX": {
+        extensions: [
+          "AMSmath.js",
+          "AMSsymbols.js",
+          "noErrors.js",
+          "noUndefined.js"
+        ],
+	Macros: {
+		ceil: ['\\lceil #1 \\rceil', 1]
+	}
+      },
+      "HTML-CSS": {
+        scale: 85
+      },
+      "tex2jax": {
+        inlineMath: [
+          ['$', '$']
+        ]
+      },
+    });
+  </script>
+  <script type="text/javascript" src=
+  "https://cdn.mathjax.org/mathjax/latest/MathJax.js">
+  </script>
+  <style type="text/css">
+    figure {
+      text-align: center;
+    }
+    figure figcaption {
+      text-align: center;
+    }
+    img {
+      width: 50%;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>QPU: DMA読み込みの性能およびwaitの特性</h1>
+
+  <h2>概要</h2>
+
+	<p>DMA読み込みを，VCDおよびVCMを用いてVPMに読み込むこと，
+	つまり<code>vpm_ld_addr</code>レジスタに読み込むメモリのアドレスを書き込むことと定義する．
+	また，DMA読み込みのwaitを，<code>vpm_ld_wait</code>レジスタを読むことと定義する．
+	DMA読み込みのwaitでストールする命令数を$I_{wait}$とする．</p>
+
+  <p>VPMのDMA読み込みの性能は，最大約$690$MB/sだった．</p>
+
+  <p>また，DMA読み込みのwaitについて，DMA読み込み発行とwait発行の間の命令数と
+  $I_{wait}$の合計は，
+  読み込むメモリの縦，横のサイズの組み合わせに関して一定になることがわかった．
+  ただし，この合計値は読み込むメモリのサイズとは関係しないことが予想される．</p>
+
+
+  <h2>実験環境</h2>
+
+  <p>実験環境として Raspberry Pi 2 Model B を使用した．
+  QPUの1コアは $250 / 4 = 62.5$ MHz で動作する．</p>
+
+
+  <h2>プログラムの動作</h2>
+
+	<p>$nrows$，$rowlen$ を $1 \le nrows \le 16$ かつ $1 \le rowlen \le 16$ とし，変化させた．
+	$1$回のDMA読み込みで$nrows \times rowlen \times (32 / 8)$バイトを読み込んだ．</p>
+
+	<p>DMA読み込み発行とwait発行の間に<code>cond_add=never</code>かつ
+	<code>cond_mul=never</code>な<code>ALU</code>命令を$ndelay$個入れた．
+	$512$命令分の容量をもつ命令キャッシュを溢れさせないようにするために，
+	$ndelay$は$512$より十分小さい，$0 \le ndelay \le 300$として変化させた．．</p>
+
+	<p>実行時間測定の誤差を抑えるため，
+	DMA読み込み発行とwait発行は$1234567$回繰り返した．</p>
+
+	<p>プログラムは$3$回実行し，中央値を測定値とした．</p>
+
+
+  <h2>結果</h2>
+
+	<p>$nrows = 16$ かつ $rowlen = 16$ のときの
+	DMA読み込みのスループットを<a href="#fig-1">Fig. 1</a>に示す．
+	最大で約$690$MB/sの性能が出た．</p>
+
+	<figure id="fig-1">
+		<img src="fig1.png" alt="nrows = 16 かつ rowlen = 16 におけるスループット">
+		<figcaption>Fig. 1: $nrows = 16$ かつ $rowlen = 16$ におけるスループット</figcaption>
+	</figure>
+	<br>
+
+	<p>$nrows = 1, 2, 4, 8, 16$，$rowlen = 1, 8, 16$ における$ndelay$と，
+	$I_{wait}$の関係を<a href="fig-2">Fig. 2</a>，
+	<a href="fig-3">Fig. 3</a>および<a href="fig-4">Fig. 4</a>に示す．
+	多少のズレがあるものの，$ndelay$と$I_{wait}$は傾き$-1$の直線関係にあることがわかる
+	(この表現は最悪なので直したい)．
+	つまり，DMA読み込みのwaitについて，DMA読み込み発行とwait発行の間の命令数と
+  $I_{wait}$の合計は，$nrows$と$rowlen$の組み合わせに関して
+  一定になることがわかる．
+  ここで，例えば$rowlen = 1$かつ$nrows = 16$の場合と
+  $rowlen = 8$かつ$nrows = 2$の場合では読み込むメモリのサイズは同じであるが，
+  $y$切片の値が異なるので，
+  DMA読み込み発行とwait発行の間の命令数と$I_{wait}$の合計は，
+  読み込むメモリのサイズには関係しないことが予想できる．</p>
+
+	<figure id="fig-2">
+		<img src="fig2.png" alt="rowlen = 1 におけるndelayとIwaitの関係">
+		<figcaption>Fig. 2: $rowlen = 1$ における$ndelay$と$I_{wait}$の関係</figcaption>
+	</figure>
+	<br>
+
+	<figure id="fig-3">
+		<img src="fig3.png" alt="rowlen = 8 におけるndelayとIwaitの関係">
+		<figcaption>Fig. 3: $rowlen = 8$ における$ndelay$と$I_{wait}$の関係</figcaption>
+	</figure>
+	<br>
+
+	<figure id="fig-4">
+		<img src="fig4.png" alt="rowlen = 16 におけるndelayとIwaitの関係">
+		<figcaption>Fig. 4: $rowlen = 16$ における$ndelay$と$I_{wait}$の関係</figcaption>
+	</figure>
+	<br>
+
+
+  <h2>Copyright notice</h2>
+
+  <p>© 2016 Yukimasa Sugizaki. All rights reserved.</p>
+
+  <p>This work is licensed under a <a rel="license" href=
+  "http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative
+  Commons Attribution-NonCommercial-ShareAlike 4.0 International
+  License</a>.</p>
+</body>
+</html>
