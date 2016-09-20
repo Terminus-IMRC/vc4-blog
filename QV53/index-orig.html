@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+  <meta http-equiv="content-type" content=
+  "text/html; charset=utf-8">
+  <meta name="viewport" content=
+  "width=device-width, initial-scale=1">
+
+  <title>QPU: DMA書き込みの性能およびwaitの特性</title>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      jax: [
+        "input/TeX",
+        "output/HTML-CSS"
+      ],
+      extensions: [
+        "tex2jax.js"
+      ],
+      "TeX": {
+        extensions: [
+          "AMSmath.js",
+          "AMSsymbols.js",
+          "noErrors.js",
+          "noUndefined.js"
+        ],
+	Macros: {
+		ceil: ['\\lceil #1 \\rceil', 1]
+	}
+      },
+      "HTML-CSS": {
+        scale: 85
+      },
+      "tex2jax": {
+        inlineMath: [
+          ['$', '$']
+        ]
+      },
+    });
+  </script>
+  <script type="text/javascript" src=
+  "https://cdn.mathjax.org/mathjax/latest/MathJax.js">
+  </script>
+  <style type="text/css">
+    figure {
+      text-align: center;
+    }
+    figure figcaption {
+      text-align: center;
+    }
+    img {
+      width: 50%;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>QPU: DMA書き込みの性能およびwaitの特性</h1>
+
+  <h2>概要</h2>
+
+	<p>DMA書き込みを，VDWを用いてVPMからメモリに書き込むこと，
+	つまり<code>vpm_st_addr</code>レジスタに書き込むメモリのアドレスを書き込むことと定義する．
+	また，DMA書き込みのwaitを，<code>vpm_st_wait</code>レジスタを読むことと定義する．
+	DMA書き込みのwaitでストールする命令数を$I_{wait}$とする．</p>
+
+  <p>VPMのDMA書き込みの性能は，最大約$1.12$GB/sだった．</p>
+
+  <p>また，DMA書き込みのwaitについて，DMA書き込み発行とwait発行の間の命令数と
+  $I_{wait}$の合計は，
+  書き込むメモリの縦，横のサイズの組み合わせに関して一定になることがわかった．
+  つまり，VPMを用いた特定の縦，横のサイズのメモリの書き込みは，
+  必ずメモリのサイズに応じた命令数待たなければ完了しないことがわかった．
+  ただし，この合計値は書き込むメモリのサイズとは関係しないことが予想される．</p>
+
+
+  <h2>実験環境</h2>
+
+  <p>実験環境として Raspberry Pi 2 Model B を使用した．
+  QPUの$1$コアは $250 / 4 = 62.5$ MHz で動作する．</p>
+
+
+  <h2>プログラムの動作</h2>
+
+	<p>$units$，$depth$ を $1 \le units \le 128$ かつ $1 \le depth \le 16$ とし，変化させた．
+	$1$回のDMA書き込みで$units \times depth \times (32 / 8)$バイトを書き込んだ．</p>
+
+	<p>DMA書き込み発行とwait発行の間で，
+  <code>branch</code>命令と<code>ALU</code>命令を用いて，
+  メモリ入出力操作とは関係ない命令を$ndelay$個実行させた．
+	これは最大でも8命令分のスペースしかとらないので，
+  <a href="../QV52/">QV52</a>とは異なり，$ndelay$を$512$程度以上
+  に設定しても，命令キャッシュが溢れることはない．</p>
+
+	<p>実行時間測定の誤差を抑えるため，
+	DMA書き込み発行とwait発行は$1234567$回繰り返した．</p>
+
+	<p>プログラムは$5$回実行し，中央値を測定値とした．</p>
+
+
+  <h2>結果と考察</h2>
+
+	<p>$units = 1, 16, 64, 128$ における
+	DMA書き込みのスループットをそれぞれ<a href="#fig-1-1">Fig. 1-1</a>，
+  <a href="#fig-1-2">Fig. 1-2</a>，<a href="#fig-1-3">Fig. 1-3</a>，
+  <a href="#fig-1-4">Fig. 1-4</a> に示す．
+	最大で$units = 128$，$depth = 16$において約$1.12$GB/sの性能が出た．
+  しかし，$units = 64, 128$ に大きな差はみられなかった．</p>
+
+	<figure id="fig-1-1">
+		<img src="fig-1-1.png" alt="units = 1 におけるスループット">
+		<figcaption>Fig. 1-1: $units = 1$におけるスループット</figcaption>
+	</figure>
+	<br>
+
+	<figure id="fig-1-2">
+		<img src="fig-1-2.png" alt="units = 16 におけるスループット">
+		<figcaption>Fig. 1-2: $units = 16$におけるスループット</figcaption>
+	</figure>
+	<br>
+
+	<figure id="fig-1-3">
+		<img src="fig-1-3.png" alt="units = 64 におけるスループット">
+		<figcaption>Fig. 1-3: $units = 64$におけるスループット</figcaption>
+	</figure>
+	<br>
+
+	<figure id="fig-1-4">
+		<img src="fig-1-4.png" alt="units = 128 におけるスループット">
+		<figcaption>Fig. 1-4: $units = 128$におけるスループット</figcaption>
+	</figure>
+	<br>
+
+	<p>$units = 1, 16, 64, 128$ における$ndelay$と
+	$I_{wait}$の関係をそれぞれ<a href="#fig-2-1">Fig. 2-1</a>，
+  <a href="#fig-2-2">Fig. 2-2</a>，<a href="#fig-2-3">Fig. 2-3</a>，
+  <a href="#fig-2-4">Fig. 2-4</a>に示す．
+	多少のズレがあるものの，$ndelay$と$I_{wait}$は傾き$-1$の直線関係にあることがわかる
+	(この表現は最悪なので直したい)．
+	つまり，DMA書き込みのwaitについて，DMA書き込み発行とwait発行の間の命令数と
+  $I_{wait}$の合計は，$units$と$depth$の組み合わせに関して
+  一定になることがわかる．
+  ここで，例えば$units = 16$，$depth = 4$の場合 (<a href="#fig-2-2">Fig. 2-2</a>) と
+  $units = 64$，$depth = 1$の場合 (<a href="#fig-2-3">Fig. 2-3</a>) では
+  書き込むメモリのサイズは同じであるが，
+  $y$切片の値が異なるので，
+  DMA書き込み発行とwait発行の間の命令数と$I_{wait}$の合計は，
+  書き込むメモリのサイズには関係しないことが予想できる．</p>
+
+	<figure id="fig-2-1">
+		<img src="fig-2-1.png" alt="units = 1 におけるndelayとIwaitの関係">
+		<figcaption>Fig. 2-1: $units = 1$ における$ndelay$と$I_{wait}$の関係</figcaption>
+	</figure>
+	<br>
+
+	<figure id="fig-2-2">
+		<img src="fig-2-2.png" alt="units = 16 におけるndelayとIwaitの関係">
+		<figcaption>Fig. 2-2: $units = 16$ における$ndelay$と$I_{wait}$の関係</figcaption>
+	</figure>
+	<br>
+
+	<figure id="fig-2-3">
+		<img src="fig-2-3.png" alt="units = 64 におけるndelayとIwaitの関係">
+		<figcaption>Fig. 2-3: $units = 64$ における$ndelay$と$I_{wait}$の関係</figcaption>
+	</figure>
+	<br>
+
+	<figure id="fig-2-4">
+		<img src="fig-2-4.png" alt="units = 128 におけるndelayとIwaitの関係">
+		<figcaption>Fig. 2-4: $units = 128$ における$ndelay$と$I_{wait}$の関係</figcaption>
+	</figure>
+	<br>
+
+
+  <h2>Copyright notice</h2>
+
+  <p>© 2016 Yukimasa Sugizaki. All rights reserved.</p>
+
+  <p>This work is licensed under a <a rel="license" href=
+  "http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative
+  Commons Attribution-NonCommercial-ShareAlike 4.0 International
+  License</a>.</p>
+</body>
+</html>
