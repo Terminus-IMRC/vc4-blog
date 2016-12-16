@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+  <meta http-equiv="content-type" content=
+  "text/html; charset=utf-8">
+  <meta name="viewport" content=
+  "width=device-width, initial-scale=1">
+
+  <title>QPU: スレッド間におけるセマフォの値変化の伝わる速さ</title>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      jax: [
+        "input/TeX",
+        "output/HTML-CSS"
+      ],
+      extensions: [
+        "tex2jax.js"
+      ],
+      "TeX": {
+        extensions: [
+          "AMSmath.js",
+          "AMSsymbols.js",
+          "noErrors.js",
+          "noUndefined.js"
+        ],
+        Macros: {
+                ceil: ['\\lceil #1 \\rceil', 1]
+        }
+      },
+      "HTML-CSS": {
+        scale: 85
+      },
+      "tex2jax": {
+        inlineMath: [
+          ['$', '$']
+        ]
+      },
+    });
+  </script>
+  <script type="text/javascript" src=
+  "https://cdn.mathjax.org/mathjax/latest/MathJax.js">
+  </script>
+  <style type="text/css">
+    figure {
+      text-align: center;
+    }
+    figure figcaption {
+      text-align: center;
+    }
+    img {
+      width: 50%;
+    }
+    table, th, td {
+      border: solid;
+    }
+    caption {
+      caption-side: bottom;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>QPU: スレッド間におけるセマフォの値変化の伝わる速さ</h1>
+
+
+  <h2>概要</h2>
+
+  <p>
+    QPUのセマフォの値の変化が他のスレッドに伝わるまでの遅延は$0$クロックであることがわかった．
+  </p>
+
+
+  <h2>実験環境</h2>
+
+  <p>
+    実験環境としてRaspberry Pi 3 Model Bを使用した．
+    <code>config.txt</code>において<code>force_turbo=1</code>としているため，
+    QPUの$1$コアは$400/4 = 100$MHzで動作する．
+  </p>
+
+
+  <h2>プログラムの動作</h2>
+
+  <p>
+    準備部では約$9$個の命令を実行した．ここで概数を述べたのは，
+    準備部では<code>uniform</code>のオーバーヘッドや命令キャッシュミスの割合が大きいからである．
+  </p>
+  <p>
+    主要ループ部では<a href="#table-1">Table. 1</a>のコードを実行した．
+    時間測定の誤差を抑えるため，主要ループ部は$12345678$回繰り返して実行した．
+    よって，主要ループ部では$12345678 \times 7 = 86419746$個の命令を実行した．
+  </p>
+  <p>
+    上記より，プログラムでは約$86419755$個の命令を実行した．
+    プログラムは$10$回実行し，その中央値を測定値とした．
+  </p>
+
+  <table id="table-1">
+    <caption>Table 1. プログラムの主要ループ部における動作</caption>
+    <tr> <th>Thread#1</th> <th>Thread#2</th> </tr>
+    <tr> <td>nop</td> <td>nop</td> </tr>
+    <tr> <td>semaphore#0 increment</td> <td>nop</td> </tr>
+    <tr> <td>nop</td> <td>semaphore#0 decrement</td> </tr>
+    <tr> <td>nop</td> <td>nop</td> </tr>
+    <tr> <td>nop</td> <td>semaphore#1 increment</td> </tr>
+    <tr> <td>semaphore#1 decrement</td> <td>nop</td> </tr>
+    <tr> <td>nop</td> <td>nop</td> </tr>
+  </table>
+
+  <h2>結果</h2>
+
+  <p>
+    上記のプログラムを実行すると，実行完了に$0.864278$秒かかった．
+  </p>
+
+
+  <h2>考察</h2>
+
+  <p>
+    QPUが理想的に$100$MHzで$86419755$個の命令を実行すると$86419755 / 100e6 = 0.86419755$秒かかる．
+    これは上記プログラムの実行完了にかかった時間とほぼ一致しているので，
+    セマフォの値の変化が他のスレッドに伝わるまでの遅延は$0$クロックであることがわかる．
+  </p>
+
+  <h2>Copyright notice</h2>
+
+  <p>© 2016 Yukimasa Sugizaki. All rights reserved.</p>
+
+  <p>This work is licensed under a <a rel="license" href=
+  "http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative
+  Commons Attribution-NonCommercial-ShareAlike 4.0 International
+  License</a>.</p>
+</body>
+</html>
