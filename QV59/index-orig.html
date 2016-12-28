@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+  <meta http-equiv="content-type" content=
+  "text/html; charset=utf-8">
+  <meta name="viewport" content=
+  "width=device-width, initial-scale=1">
+
+  <title>QPU: VPMの読み込みと書き込みを両方行う命令を連続して実行した場合に発生するストール</title>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      jax: [
+        "input/TeX",
+        "output/HTML-CSS"
+      ],
+      extensions: [
+        "tex2jax.js"
+      ],
+      "TeX": {
+        extensions: [
+          "AMSmath.js",
+          "AMSsymbols.js",
+          "noErrors.js",
+          "noUndefined.js"
+        ],
+	Macros: {
+		ceil: ['\\lceil #1 \\rceil', 1]
+	}
+      },
+      "HTML-CSS": {
+        scale: 85
+      },
+      "tex2jax": {
+        inlineMath: [
+          ['$', '$']
+        ]
+      },
+    });
+  </script>
+  <script type="text/javascript" src=
+  "https://cdn.mathjax.org/mathjax/latest/MathJax.js">
+  </script>
+  <style type="text/css">
+    figure {
+      text-align: center;
+    }
+    figure figcaption {
+      text-align: center;
+    }
+    img {
+      width: 50%;
+    }
+    pre.code {
+      font-family: monospace;
+      border: solid;
+    }
+    div.caption {
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>QPU: VPMの読み込みと書き込みを両方行う命令を連続して実行した場合に発生するストール</h1>
+
+
+  <h2>概要</h2>
+	<p><a href="#list-1">List. 1</a>のように命令を実行したとき，
+	<a href="#fig-1">Fig. 1</a>及び<a href="#fig-2">Fig. 2</a>及び<a href="#fig-3">Fig. 3</a>及び<a href="#fig-4">Fig. 4</a>
+	に示すストールが$vpm\_num$のループにおいて発生することがわかった．
+	$ndelay2 \gt 3$ については$ndelay2=3$と同じ結果だった．</p>
+
+	<p>ここで，$ndelay1 \le 5$ については，
+	VPM read setup直後のVPMの読み込みにおけるストールが現れている (<a href="../QV56/">QV56</a>)．</p>
+
+	<p>また，$ndelay1$や$ndelay2$はただ増やせばよいというわけではない．
+	例えば，$vpm\_num=16$について，$ndelay1=0$かつ$ndelay2=1$のときのストールは$17$命令であるが，$ndelay1=2$かつ$ndelay2=2$のときのストールは$18$命令である．</p>
+
+	<div id="list-1">
+		<pre class="code">Loop 1234567 times {
+    VPM write setup
+    VPM read setup
+    Loop ndelay1 times {
+        nop
+    }
+    Loop vpm_num times {
+        VPM read &amp; write
+        Loop ndelay2 times {
+            nop
+        }
+    }
+}</pre>
+		<div class="caption">List. 1: 実行したプログラムの流れ (<code>Loop</code>や<code>}</code>の行以外は$1$行で$1$命令を表す)</div>
+	</div>
+
+	<figure id="fig-1">
+		<img src="fig-1.png" alt="ndelay2=0において発生したストール">
+		<figcaption>Fig. 1: $ndelay2=0$ において発生したストール</figcaption>
+	</figure>
+	<br>
+
+	<figure id="fig-2">
+		<img src="fig-2.png" alt="ndelay2=1において発生したストール">
+		<figcaption>Fig. 2: $ndelay2=1$ において発生したストール</figcaption>
+	</figure>
+	<br>
+
+	<figure id="fig-3">
+		<img src="fig-3.png" alt="ndelay2=2において発生したストール">
+		<figcaption>Fig. 3: $ndelay2=2$ において発生したストール</figcaption>
+	</figure>
+	<br>
+
+	<figure id="fig-4">
+		<img src="fig-4.png" alt="ndelay2>=3において発生したストール">
+		<figcaption>Fig. 4: $ndelay2 \ge 3$ において発生したストール</figcaption>
+	</figure>
+	<br>
+
+
+  <h2>Copyright notice</h2>
+
+  <p>© 2016 Yukimasa Sugizaki. All rights reserved.</p>
+
+  <p>This work is licensed under a <a rel="license" href=
+  "http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative
+  Commons Attribution-NonCommercial-ShareAlike 4.0 International
+  License</a>.</p>
+</body>
+</html>
