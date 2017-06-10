@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+  <meta http-equiv="content-type" content=
+  "text/html; charset=utf-8">
+  <meta name="viewport" content=
+  "width=device-width, initial-scale=1">
+
+  <title>QPU: nopレジスタはスレッド[12:15]が直前にraddrに指定したレジスタの値を返す</title>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      jax: [
+        "input/TeX",
+        "output/HTML-CSS"
+      ],
+      extensions: [
+        "tex2jax.js"
+      ],
+      "TeX": {
+        extensions: [
+          "AMSmath.js",
+          "AMSsymbols.js",
+          "noErrors.js",
+          "noUndefined.js"
+        ],
+        Macros: {
+                ceil: ['\\lceil #1 \\rceil', 1]
+        }
+      },
+      "HTML-CSS": {
+        scale: 85
+      },
+      "tex2jax": {
+        inlineMath: [
+          ['$', '$']
+        ]
+      },
+    });
+  </script>
+  <script type="text/javascript" src=
+  "https://cdn.mathjax.org/mathjax/latest/MathJax.js">
+  </script>
+  <style type="text/css">
+    figure {
+      text-align: center;
+    }
+    figure figcaption {
+      text-align: center;
+    }
+    img {
+      width: 50%;
+    }
+    table, th, td {
+      border: solid;
+    }
+    caption {
+      caption-side: bottom;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>QPU: nopレジスタはスレッド[12:15]が直前にraddrに指定したレジスタの値を返す</h1>
+
+  <p>VideoCore IV QPU の<code>nop</code>レジスタ (39番)
+     <code>A</code>，<code>B</code> を読むと，
+     スレッド[12:15]がそれぞれ直前に
+     <code>raddr_a</code>，<code>raddr_b</code> に指定したレジスタの
+     値が返されることが分かった．</p>
+
+
+  <h2>例1</h2>
+
+  <p>例を示す．プログラムを以下とする．</p>
+
+  <pre><code>
+li cond_add=al waddr_add=ra0 imm=7
+alu
+alu raddr_a=ra0
+alu cond_add=al op_add=or waddr_add=r0 raddr_a=nop add_a=ra add_b=ra
+  </code></pre>
+
+  <p>これを実行すると，<code>r0</code> には
+     <code>[7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7]</code>が入る．
+     ここで，プログラムの3行目においてはALUのconditionは両方とも
+     <code>never</code> であり，ALUが動いていないことに注意されたい．
+     ALUを動かさない場合でも <code>nop</code> レジスタには
+     直前に <code>raddr_a</code> に指定したレジスタの値が代入されるのだ．</p>
+
+
+  <h2>例2</h2>
+
+  <p><code>A</code>，<code>B</code> の <code>nop</code> レジスタを
+     同時に使用してみよう． プログラムを以下とする．</p>
+
+  <pre><code>
+li cond_add=al waddr_add=ra0 imm=3
+li cond_mul=al waddr_mul=rb0 imm=4
+alu
+alu raddr_a=ra0 raddr_b=rb0
+alu cond_add=al op_add=or waddr_add=r0 raddr_a=nop add_a=ra add_b=ra
+alu cond_add=al op_add=or waddr_add=r1 raddr_b=nop add_a=rb add_b=rb
+alu cond_add=al op_add=add waddr_add=r2 raddr_a=nop raddr_b=nop add_a=ra add_b=rb
+  </code></pre>
+
+  <p>これを実行すると以下が得られる．</p>
+
+  <ul>
+    <li> <code>r0</code>として<code>[3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]</code> </li>
+    <li> <code>r1</code>として<code>[4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4]</code> </li>
+    <li> <code>r2</code>として<code>[7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7]</code> </li>
+  </ul>
+
+  <p>
+    上から，<code>nop</code>レジスタの<code>A</code>，<code>B</code>が
+    独立していることがわかる．
+    また，<code>nop</code>レジスタを<code>raddr</code>に指定しても
+    <code>nop</code>レジスタの値は変化しないことを抑えておきたい．
+  </p>
+
+
+  <h2>例3</h2>
+
+  <p><code>nop</code>レジスタから返される値がスレッド[12:15]によって
+     直前に<code>raddr</code>に指定されたレジスタのものであることを確認する．
+     プログラムを以下とする．</p>
+
+  <pre><code>
+alu raddr_a=element_number
+alu cond_add=al op_add=or waddr_add=r0 raddr_a=nop add_a=ra add_b=ra
+  </code></pre>
+
+  <p>これを実行すると，<code>r0</code>には
+     <code>[12, 13, 14, 15, 12, 13, 14, 15, 12, 13, 14, 15, 12, 13, 14, 15]</code>
+     が入る．
+     これは，<code>nop</code>レジスタから返される値がスレッド[12:15]によって
+     直前に<code>raddr</code>に指定された
+     レジスタのものであることを示している．
+     このことは<code>vpm_read</code>を<code>raddr</code>に指定することによっても
+     確かめることができる．</p>
+
+
+  <h2>例4</h2>
+
+  <p>今回紹介した手法により，1命令において最大4個のレジスタ
+     (うち2個は<code>nop</code>レジスタ) に対して値を書き込むことができる．
+     プログラムを以下とする．</p>
+
+  <pre><code>
+li cond_add=al waddr_add=ra0 imm=3
+li cond_add=al waddr_mul=rb0 imm=4
+alu
+alu cond_add=al cond_mul=al op_add=sub op_mul=v8adds waddr_add=r0 waddr_mul=r1 raddr_a=ra0 raddr_b=rb0 add_a=rb add_b=ra mul_a=ra mul_b=rb
+  </code></pre>
+
+  <p>プログラムの4行目において，
+     <code>r0</code>に$4-3$の結果を，<code>r1</code>に$4+3$の結果を，
+     <code>nop</code>レジスタの<code>A</code>に$3$を，
+     <code>nop</code>レジスタの<code>B</code>に$4$を代入している．</p>
+
+
+  <h2>Copyright notice</h2>
+
+  <p>© 2017 Yukimasa Sugizaki. All rights reserved.</p>
+
+  <p>This work is licensed under a <a rel="license" href=
+  "http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative
+  Commons Attribution-NonCommercial-ShareAlike 4.0 International
+  License</a>.</p>
+</body>
+</html>
