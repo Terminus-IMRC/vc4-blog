@@ -107,6 +107,27 @@
     <tr> <td>31</td> <td>v8subs </td> <td>y</td> <td>y</td> <td> </td> <td>n</td> <td>n</td> </tr>
   </table> <br>
 
+
+  <table id="table-2">
+    <caption>Table 2. Flags set by mul instructions</caption>
+    <tr> <th></th> <th></th> <th colspan="3">Flags</th> <th></th> <th></th> </tr>
+    <tr> <th>No.</th> <th>Insn.  </th>
+         <th>Z <sup><a href="#sup-1">1</a></sup></th>
+         <th>N <sup><a href="#sup-2">2</a></sup></th>
+         <th>C <sup><a href="#sup-3">3</a></sup></th>
+	 <th>Input is float <sup><a href="#sup-4">4</a></sup></th>
+	 <th>Output is float <sup><a href="#sup-4">4</a></sup></th> </tr>
+    <tr> <td>0</td> <td>nop    </td> <td> </td> <td> </td> <td> </td> <td> </td> <td> </td> </tr>
+    <tr> <td>1</td> <td>fmul   </td> <td> </td> <td> </td> <td> </td> <td> </td> <td> </td> </tr>
+    <tr> <td>2</td> <td>mul24  </td> <td> </td> <td> </td> <td> </td> <td> </td> <td> </td> </tr>
+    <tr> <td>3</td> <td>v8muld </td> <td> </td> <td> </td> <td> </td> <td> </td> <td> </td> </tr>
+    <tr> <td>4</td> <td>v8min  </td> <td> </td> <td> </td> <td> </td> <td> </td> <td> </td> </tr>
+    <tr> <td>5</td> <td>v8max  </td> <td> </td> <td> </td> <td> </td> <td> </td> <td> </td> </tr>
+    <tr> <td>6</td> <td>v8adds </td> <td> </td> <td> </td> <td> </td> <td> </td> <td> </td> </tr>
+    <tr> <td>7</td> <td>v8subs </td> <td> </td> <td> </td> <td> </td> <td> </td> <td> </td> </tr>
+  </table> <br>
+
+
   <sup id="sup-1">1. Set if out[31:0] are all 0.</sup> <br>
   <sup id="sup-2">2. Set if out[31] is set.</sup> <br>
   <sup id="sup-3">3. Normally, set if at least one of the 2 invisible bits
