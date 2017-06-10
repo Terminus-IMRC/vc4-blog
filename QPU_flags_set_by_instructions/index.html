@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta http-equiv="content-type" content=
+  "text/html; charset=utf-8">
+  <meta name="viewport" content=
+  "width=device-width, initial-scale=1">
+
+  <title>QPU: Flags set by instructions</title>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      jax: [
+        "input/TeX",
+        "output/HTML-CSS"
+      ],
+      extensions: [
+        "tex2jax.js"
+      ],
+      "TeX": {
+        extensions: [
+          "AMSmath.js",
+          "AMSsymbols.js",
+          "noErrors.js",
+          "noUndefined.js"
+        ],
+        Macros: {
+                ceil: ['\\lceil #1 \\rceil', 1]
+        }
+      },
+      "HTML-CSS": {
+        scale: 85
+      },
+      "tex2jax": {
+        inlineMath: [
+          ['$', '$']
+        ]
+      },
+    });
+  </script>
+  <script type="text/javascript" src=
+  "https://cdn.mathjax.org/mathjax/latest/MathJax.js">
+  </script>
+  <style type="text/css">
+    figure {
+      text-align: center;
+    }
+    figure figcaption {
+      text-align: center;
+    }
+    img {
+      width: 50%;
+    }
+    table, th, td {
+      border: solid;
+    }
+    caption {
+      caption-side: bottom;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>QPU: Flags set by instructions</h1>
+
+
+  <table id="table-1">
+    <caption>Table 1. Flags set by add instructions</caption>
+    <tr> <th></th> <th></th> <th colspan="3">Flags</th> <th></th> <th></th> </tr>
+    <tr> <th>No.</th> <th>Insn.  </th>
+         <th>Z <sup><a href="#sup-1">1</a></sup></th>
+         <th>N <sup><a href="#sup-2">2</a></sup></th>
+         <th>C <sup><a href="#sup-3">3</a></sup></th>
+	 <th>Input is float <sup><a href="#sup-4">4</a></sup></th>
+	 <th>Output is float <sup><a href="#sup-4">4</a></sup></th> </tr>
+    <tr> <td> 0</td> <td>nop    </td> <td>y</td> <td>y</td> <td> </td> <td>y</td> <td>y</td> </tr>
+    <tr> <td> 1</td> <td>fadd   </td> <td>y</td> <td>y</td> <td> </td> <td>y</td> <td>y</td> </tr>
+    <tr> <td> 2</td> <td>fsub   </td> <td>y</td> <td>y</td> <td> </td> <td>y</td> <td>y</td> </tr>
+    <tr> <td> 3</td> <td>fmin   </td> <td>y</td> <td>y</td> <td> </td> <td>y</td> <td>y</td> </tr>
+    <tr> <td> 4</td> <td>fmax   </td> <td>y</td> <td>y</td> <td> </td> <td>y</td> <td>y</td> </tr>
+    <tr> <td> 5</td> <td>fminabs</td> <td>y</td> <td>n</td> <td> </td> <td>y</td> <td>y</td> </tr>
+    <tr> <td> 6</td> <td>fmaxabs</td> <td>y</td> <td>n</td> <td> </td> <td>y</td> <td>y</td> </tr>
+    <tr> <td> 7</td> <td>ftoi   </td> <td>y</td> <td>y</td> <td> </td> <td>n</td> <td>y</td> </tr>
+    <tr> <td> 8</td> <td>itof   </td> <td>y</td> <td>y</td> <td> </td> <td>y</td> <td>n</td> </tr>
+    <tr> <td> 9</td> <td>       </td> <td> </td> <td> </td> <td> </td> <td> </td> <td> </td> </tr>
+    <tr> <td>10</td> <td>       </td> <td> </td> <td> </td> <td> </td> <td> </td> <td> </td> </tr>
+    <tr> <td>11</td> <td>       </td> <td> </td> <td> </td> <td> </td> <td> </td> <td> </td> </tr>
+    <tr> <td>12</td> <td>add    </td> <td>y</td> <td>y</td> <td>y</td> <td>n</td> <td>n</td> </tr>
+    <tr> <td>13</td> <td>sub    </td> <td>y</td> <td>y</td> <td>y</td> <td>n</td> <td>n</td> </tr>
+    <tr> <td>14</td> <td>shr    </td> <td>y</td> <td>y</td> <td>y</td> <td>n</td> <td>n</td> </tr>
+    <tr> <td>15</td> <td>asr    </td> <td>y</td> <td>y</td> <td>y</td> <td>n</td> <td>n</td> </tr>
+    <tr> <td>16</td> <td>ror    </td> <td>y</td> <td>y</td> <td>n</td> <td>n</td> <td>n</td> </tr>
+    <tr> <td>17</td> <td>shl    </td> <td>y</td> <td>y</td> <td>y</td> <td>n</td> <td>n</td> </tr>
+    <tr> <td>18</td> <td>min    </td> <td>y</td> <td>y</td> <td>y <sup><a href="#sup-5">5</a></sup></td> <td>n</td> <td>n</td> </tr>
+    <tr> <td>19</td> <td>max    </td> <td>y</td> <td>y</td> <td>y <sup><a href="#sup-5">5</a></sup></td> <td>n</td> <td>n</td> </tr>
+    <tr> <td>20</td> <td>and    </td> <td>y</td> <td>y</td> <td>n</td> <td>n</td> <td>n</td> </tr>
+    <tr> <td>21</td> <td>or     </td> <td>y</td> <td>y</td> <td>n</td> <td>n</td> <td>n</td> </tr>
+    <tr> <td>22</td> <td>xor    </td> <td>y</td> <td>y</td> <td>n</td> <td>n</td> <td>n</td> </tr>
+    <tr> <td>23</td> <td>not    </td> <td>y</td> <td>y</td> <td>n</td> <td>n</td> <td>n</td> </tr>
+    <tr> <td>24</td> <td>clz    </td> <td>y</td> <td>y</td> <td>n</td> <td>n</td> <td>n</td> </tr>
+    <tr> <td>25</td> <td>       </td> <td> </td> <td> </td> <td> </td> <td> </td> <td> </td> </tr>
+    <tr> <td>26</td> <td>       </td> <td> </td> <td> </td> <td> </td> <td> </td> <td> </td> </tr>
+    <tr> <td>27</td> <td>       </td> <td> </td> <td> </td> <td> </td> <td> </td> <td> </td> </tr>
+    <tr> <td>28</td> <td>       </td> <td> </td> <td> </td> <td> </td> <td> </td> <td> </td> </tr>
+    <tr> <td>29</td> <td>       </td> <td> </td> <td> </td> <td> </td> <td> </td> <td> </td> </tr>
+    <tr> <td>30</td> <td>v8adds </td> <td>y</td> <td>y</td> <td> </td> <td>n</td> <td>n</td> </tr>
+    <tr> <td>31</td> <td>v8subs </td> <td>y</td> <td>y</td> <td> </td> <td>n</td> <td>n</td> </tr>
+  </table> <br>
+
+  <sup id="sup-1">1. Set if out[31:0] are all 0.</sup> <br>
+  <sup id="sup-2">2. Set if out[31] is set.</sup> <br>
+  <sup id="sup-3">3. Normally, set if at least one of the 2 invisible bits
+                     next to the significant bits, out[32] and out[-1],
+                     is set.</sup> <br>
+  <sup id="sup-4">4. Related to packing and unpacking.
+                     See the correnponding tables on the manual.</sup> <br>
+  <sup id="sup-5">5. Set if $add\_a > add\_b$.</sup> <br>
+
+
+  <h2>Copyright notice</h2>
+
+  <p>© 2017 Yukimasa Sugizaki. All rights reserved.</p>
+
+  <p>This work is licensed under a <a rel="license" href=
+  "http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative
+  Commons Attribution-NonCommercial-ShareAlike 4.0 International
+  License</a>.</p>
+</body>
+</html>
