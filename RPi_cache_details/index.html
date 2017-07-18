@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta http-equiv="content-type" content=
+  "text/html; charset=utf-8">
+  <meta name="viewport" content=
+  "width=device-width, initial-scale=1">
+
+  <title>Raspberry Pi: ARM-side cache details</title>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      jax: [
+        "input/TeX",
+        "output/HTML-CSS"
+      ],
+      extensions: [
+        "tex2jax.js"
+      ],
+      "TeX": {
+        extensions: [
+          "AMSmath.js",
+          "AMSsymbols.js",
+          "noErrors.js",
+          "noUndefined.js"
+        ],
+        Macros: {
+                ceil: ['\\lceil #1 \\rceil', 1]
+        }
+      },
+      "HTML-CSS": {
+        scale: 85
+      },
+      "tex2jax": {
+        inlineMath: [
+          ['$', '$']
+        ]
+      },
+    });
+  </script>
+  <script type="text/javascript" src=
+  "https://cdn.mathjax.org/mathjax/latest/MathJax.js">
+  </script>
+  <style type="text/css">
+    figure {
+      text-align: center;
+    }
+    figure figcaption {
+      text-align: center;
+    }
+    img {
+      width: 50%;
+    }
+    table, th, td {
+      border: solid;
+    }
+    caption {
+      caption-side: bottom;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>Raspberry Pi: ARM-side cache details</h1>
+
+
+  <br />
+  <h2>Introduction</h2>
+
+  <p>
+    On ARM platforms, there would be some caches up to 7 (inclusive).  Policies,
+    sizes and characteristics of them can be obtained by accessing CP15
+    coprocessor on ARM, which privides architecture and feature information.
+  </p>
+
+  <p>
+    To read/write from/to registers of CP15, <code>MRC</code> and
+    <code>MCR</code> instructions are used, respectively.  The registers are
+    selected by <code>CRn</code>, <code>CRm</code>, <code>opc1</code> and
+    <code>opc2</code> arguments of the instructions.
+    <a href="#table-1">Table 1</a> shows a part of the registers related to
+    caches.  To be more precise, <code>MRC p15, opc1, Rt, CRn, CRm, opc2</code>
+    reads from a CP15 register and writes the content of it to an ARM register
+    <code>Rt</code>, and <code>MCR p15, opc1, Rt, CRn, CRm, opc2</code> writes
+    the content of an ARM register <code>Rt</code> to a CP15 register.
+  </p>
+
+  <table id="table-1">
+    <caption>Table 1. A part of CP15 registers related to caches</caption>
+    <tr> <th>Name</th> <th><code>CRn</code></th> <th><code>CRm</code></th> <th><code>opc1</code></th> <th><code>opc2</code></th> <th>Description</th> </tr>
+    <tr> <td>CCSIDR</td> <td>c0</td> <td>c0</td> <td>1</td> <td>0</td> <td>Cache size ID register       </td> </tr>
+    <tr> <td>CLIDR </td> <td>c0</td> <td>c0</td> <td>1</td> <td>1</td> <td>Cache level ID register      </td> </tr>
+    <tr> <td>CSSELR</td> <td>c0</td> <td>c0</td> <td>2</td> <td>0</td> <td>Cache size selection register</td> </tr>
+  </table> <br />
+
+
+  <br />
+  <h2>Environment</h2>
+
+  <p>
+    Our experiments in this article are carried out on these boards:
+    <ul>
+      <li>Raspberry Pi 1 Model B v2.0</li>
+      <li>Raspberry Pi 2 Model B v1.1</li>
+      <li>Raspberry Pi 3 Model B v1.2</li>
+    </ul>
+    They all have ARM CPUs and thus have CP15 coprocessor.
+  </p>
+
+  <p>
+    Accessing CP15 registers needs PL1 privilege, which is normally the one at
+    which operating system runs.  So we wrote a Linux driver which accesses CP15
+    registers on loading.
+  </p>
+
+
+  <br />
+  <h2>Obtaining cache information</h2>
+
+  <p>
+    First, we obtain the number of caches the ARM CPUs implement.  The CLIDR
+    register bits [$3(n-1)+2$:$3(n-1)$] indicates whether level-$n$ cache
+    exists and the type of that if it does.
+  </p>
+
+  <p>
+    It is shown that Raspberry Pi 2 and 3 have level-1 and level-2 caches:
+    the former is separated to instruction and data ones and the latter is
+    unified.
+  </p>
+
+  <p>
+    In the next, we obtain the characteristics of the caches.  The CCSIDR
+    register shows policies and sizes of the caches selected in the CSSELR
+    register. Bit $0$ of the CSSELR register indicates which type of the cache
+    is selected ($0$ means data or unified cache and $1$ means instruction
+    cache). And bits [$3$:$1$] indicates the level of the cache $-1$ selected
+    (e.g., $0\mathrm{b}000$ indicates level-1 cache).
+  </p>
+
+  <p>
+    The
+    results are shown on <a href="#table-2">Table 2</a>,
+    <a href="#table-3">Table 3</a> and <a href="#table-4">Table 4</a>.
+  </p>
+
+
+  <table id="table-3">
+    <caption>Table 3. Raspberry Pi 2</caption>
+    <tr> <th>             </th> <th>L1C data     </th> <th>L1C insn.    </th> <th>L2C          </th> </tr>
+    <tr> <th>Write-through</th> <td>not supported</td> <td>not supported</td> <td>not supported</td> </tr>
+    <tr> <th>Write-back   </th> <td>supported    </td> <td>not supported</td> <td>supported    </td> </tr>
+    <tr> <th>Read-alloc   </th> <td>supported    </td> <td>supported    </td> <td>supported    </td> </tr>
+    <tr> <th>Write-alloc  </th> <td>supported    </td> <td>not supported</td> <td>supported    </td> </tr>
+    <tr> <th>Num. of sets </th> <td>128          </td> <td>512          </td> <td>1024         </td> </tr>
+    <tr> <th>Associativity</th> <td>4            </td> <td>2            </td> <td>8            </td> </tr>
+    <tr> <th>Line size    </th> <td>16           </td> <td>8            </td> <td>16           </td> </tr>
+  </table> <br />
+
+  <table id="table-4">
+    <caption>Table 4. Raspberry Pi 3</caption>
+    <tr> <th>             </th> <th>L1C data     </th> <th>L1C insn.    </th> <th>L2C          </th> </tr>
+    <tr> <th>Write-through</th> <td>not supported</td> <td>not supported</td> <td>not supported</td> </tr>
+    <tr> <th>Write-back   </th> <td>supported    </td> <td>not supported</td> <td>supported    </td> </tr>
+    <tr> <th>Read-alloc   </th> <td>supported    </td> <td>supported    </td> <td>supported    </td> </tr>
+    <tr> <th>Write-alloc  </th> <td>supported    </td> <td>not supported</td> <td>supported    </td> </tr>
+    <tr> <th>Num. of sets </th> <td>128          </td> <td>256          </td> <td>512          </td> </tr>
+    <tr> <th>Associativity</th> <td>4            </td> <td>2            </td> <td>16           </td> </tr>
+    <tr> <th>Line size    </th> <td>16           </td> <td>16           </td> <td>16           </td> </tr>
+  </table> <br />
+
+
+  <br />
+  <h2>Reference</h2>
+  <ul>
+    <li>ARM, "<i>ARM Architecture Reference Manual ARMv7-A and ARMv7-R edition</i>"</li>
+  </ul>
+
+
+  <br />
+  <h2>Copyright notice</h2>
+
+  <p>
+    © 2017 Yukimasa Sugizaki. All rights reserved.
+  </p>
+
+  <p>
+    This work is licensed under a <a rel="license" href=
+    "http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative
+    Commons Attribution-NonCommercial-ShareAlike 4.0 International
+    License</a>.
+  </p>
+
+
+</body>
+</html>
