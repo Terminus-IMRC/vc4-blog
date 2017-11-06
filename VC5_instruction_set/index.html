@@ -144,7 +144,7 @@
     <tr> <td>34:32</td> <td>cond_br</td> <td>Branch condition.</td> <td><a href="#table-6">Table 6. Branch cond</a></td> </tr>
     <tr> <td>31:24</td> <td>addr_high</td> <td>addr[31:24].</td> <td></td> </tr>
     <tr> <td>22:21</td> <td>msfign</td> <td>0=none: Ignore multisample flags when determining branch condition.<br />
-                                            1=p: If no multisample flags are set in the lane (a pixel in the FS, a vertex in the VS), ignore the lane's condition when computing thebranch condition.<br />
+                                            1=p: If no multisample flags are set in the lane (a pixel in the FS, a vertex in the VS), ignore the lane's condition when computing the branch condition.<br />
                                             2=q: If no multisample flags are set in a 2x2 quad in the FS, ignore the quad's a/b conditions.</td> <td></td> </tr>
     <tr> <td>20:18</td> <td>Reserved</td> <td></td> <td></td> </tr>
     <tr> <td>17:15</td> <td>bdu</td> <td>Selects how to compute the new uniforms pointer if the branch is taken.  (ABS/REL implicitly load a uniform and use that)<br />
@@ -266,7 +266,7 @@
     <tr><td>0b010xxyy</td><td>Add ALU instruction condition (xx) and mul ALU push condition (yy).</td></tr>
     <tr><td>0b011xxyy</td><td>Mul ALU instruction condition (xx) and add ALU push condition (yy).</td></tr>
     <tr><td>0b1xx00yy</td><td>Mul ALU instruction condition (xx) and add ALU instruction condition (yy).</td></tr>
-    <tr><td>0b1xxyyyy</td><td>Mul ALU instruction condition (xx) and add ALU uniform? condition (yyy).</td></tr>
+    <tr><td>0b1xxyyyy</td><td>Mul ALU instruction condition (xx) and add ALU uniform? condition (yyyy).</td></tr>
   </table> <br />
 
   <table id="table-5-1">
@@ -320,8 +320,8 @@
 
   <table id="table-7">
     <caption>Table 7. Instruction signal</caption>
-    <tr><th></th><th colspan="3">Writes to</th><th>&nbsp;</th></tr>
-    <tr><th>Value</th><th>r3</th><th>r4</th><th>r5</th><th>Misc</th></tr>
+    <tr><th rowspan="2">Value</th><th colspan="3">Writes to</th><th rowspan="2">Misc</th></tr>
+    <tr><th>r3</th><th>r4</th><th>r5</th></tr>
     <tr><td>0</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
     <tr><td>1</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>THRSW</td></tr>
     <tr><td>2</td><td>&nbsp;</td><td>&nbsp;</td><td>LDUNIF</td><td>&nbsp;</td></tr>
