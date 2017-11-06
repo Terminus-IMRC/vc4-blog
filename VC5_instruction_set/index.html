@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <meta http-equiv="content-type" content=
+  "text/html; charset=utf-8">
+  <meta name="viewport" content=
+  "width=device-width, initial-scale=1">
+
+  <title>Broadcom VideoCore V QPU Instruction Set</title>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      jax: [
+        "input/TeX",
+        "output/HTML-CSS"
+      ],
+      extensions: [
+        "tex2jax.js"
+      ],
+      "TeX": {
+        extensions: [
+          "AMSmath.js",
+          "AMSsymbols.js",
+          "noErrors.js",
+          "noUndefined.js"
+        ],
+        Macros: {
+                ceil: ['\\lceil #1 \\rceil', 1]
+        }
+      },
+      "HTML-CSS": {
+        scale: 85
+      },
+      "tex2jax": {
+        inlineMath: [
+          ['$', '$']
+        ]
+      },
+    });
+  </script>
+  <script type="text/javascript" src=
+  "https://cdn.mathjax.org/mathjax/latest/MathJax.js">
+  </script>
+  <style type="text/css">
+    figure {
+      text-align: center;
+    }
+    figure figcaption {
+      text-align: center;
+    }
+    img {
+      width: 50%;
+    }
+    table, th, td {
+      border: solid;
+      border-width: 1pt;
+    }
+    caption {
+      caption-side: bottom;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>Broadcom VideoCore V QPU Instruction Set</h1>
+
+
+  <br />
+  <h2>VideoCore V QPU の存在</h2>
+
+  <p>
+    2015年7月発行のMagPi Issue 35において，Eben UptonがVideoCore Vの存在を明らかにした
+    <a href="#ref-1">[1]</a>．この記事においてVideoCore Vの詳細は語られなかったが，
+    IntelからPi Towersに転職したEric AnholtがVideoCore向けのオープンソースなドライバを
+    書いていることが明らかにされた．
+  </p>
+
+  <p>
+    2017年2月3日，Eric Anholtが自身のGitHubのmesaリポジトリにおいて，未完成の
+    VideoCore V向けドライバを公開した．そのコミットの中には，VideoCore V QPUの
+    逆アセンブラのコード<a href="#ref-2">[2]</a>や，VideoCore Vのアーキテクチャに
+    関する記述<a href="#ref-3">[3]</a>が含まれている．
+  </p>
+
+  <p>
+    2017年7月6日，Eric AnholtがMesa-devメーリングリストにおいて，上記リポジトリの存在を
+    アピールした<a href="#ref-4">[4]</a>．このメールにおいて，VideoCore IV QPUに
+    存在していたregfile A/BがVideoCore V QPUでは統合されること，また，
+    Mesaで半精度浮動小数点数がサポートされる予定であることが述べられた．
+  </p>
+
+  <p>
+    本記事では，上記のディスアセンブラのコードから読み取れる
+    VideoCore V QPUの特徴および命令セットを述べる．
+  </p>
+
+
+  <br />
+  <h2>VideCore Vのアーキテクチャ</h2>
+
+  <p>
+    VideoCore IVのV3Dのバージョンが2.1および2.6だった
+    <sup><a href="#sup-2">2</a></sup>のに対し，VideoCore VのV3Dのバージョンは
+    3.3である．
+    V3D 3.3では，QPUにMMUが追加され，OpenGL 3.1がサポートされている．
+    QPUにMMUが追加されたことにより，メモリ入出力領域のアドレスが物理的に連続する必要が
+    なくなり，また，不正なメモリ読み書きを検出しブロックすることも可能になった．
+  </p>
+
+
+  <br />
+  <h2>VideoCore V QPUの命令セット</h2>
+
+  <p>
+    VideoCore V QPUの命令には大きく分けてALU命令 (<a href="#table-1">Table 1</a>) と
+    Branch命令 (<a href="#table-2">Table 2</a>) がある．
+  </p>
+
+  <table id="table-1">
+    <caption>Table 1. ALU Instruction</caption>
+    <tr> <th>Bit(s)</th> <th>Field  </th> <th>Description</th> <th>Reference</th> </tr>
+    <tr> <td>63:58 </td> <td>op_mul </td> <td>Mul ALU opcode</td> <td><a href="#table-4">Table 4. Mul ALU opcode</a></td> </tr>
+    <tr> <td>57:53 </td> <td>sig    </td> <td>Signaling bits</td> <td><a href="#table-7">Table 7. Instruction signal</a></td> </tr>
+    <tr> <td>52:46 </td> <td>cond   </td> <td>ALU push/uniform(?)/insn. condition code</td> <td><a href="#table-5">Table 5. ALU push/uniform(?)/insn. cond</a></td> </tr>
+    <tr> <td>45    </td> <td>mm     </td> <td>If 0, mul ALU writes to normal regfile, else special function register</td> <td rowspan="4"><a href="#table-8">Table 8. Special function registers</a></td> </tr>
+    <tr> <td>44    </td> <td>ma     </td> <td>If 0, add ALU writes to normal regfile, else special function register</td> </tr>
+    <tr> <td>43:38 </td> <td>waddr_m</td> <td>Write address for mul output</td> </tr>
+    <tr> <td>37:32 </td> <td>waddr_a</td> <td>Write address for add output</td> </tr>
+    <tr> <td>31:24 </td> <td>op_add </td> <td>Add ALU opcode</td> <td><a href="#table-3">Table 3. Add ALU opcode</a></td> </tr>
+    <tr> <td>23:21 </td> <td>mul_b  </td> <td>Input mux control for B port of mul ALU</td> <td rowspan="4"><a href="#table-9">Table 9. Mux</a></td> </tr>
+    <tr> <td>20:18 </td> <td>mul_a  </td> <td>Input mux control for A port of mul ALU</td> </tr>
+    <tr> <td>17:15 </td> <td>add_b  </td> <td>Input mux control for B port of add ALU</td> </tr>
+    <tr> <td>14:12 </td> <td>add_a  </td> <td>Input mux control for A port of add ALU</td> </tr>
+    <tr> <td>11:6  </td> <td>raddr_a</td> <td>Read address A of register</td> <td rowspan="4"><a href="#table-8">Table 8. Special function registers</a></td> </tr>
+    <tr> <td>5:0   </td> <td>raddr_b</td> <td>Read address B of register</td> </tr>
+  </table> <br />
+
+  <table id="table-2">
+    <caption>Table 2. Branch Instruction</caption>
+    <tr> <th>Bit(s)</th> <th>Field  </th> <th>Description</th> <th>Reference</th> </tr>
+    <tr> <td>57:56</td> <td>sig</td> <td>bit[57]=1 implies branch.</td> <td></td> </tr>
+    <tr> <td>55:35</td> <td>addr_low</td> <td>addr[23:3].</td> <td></td> </tr>
+    <tr> <td>34:32</td> <td>cond_br</td> <td>Branch condition.</td> <td><a href="#table-6">Table 6. Branch cond</a></td> </tr>
+    <tr> <td>31:24</td> <td>addr_high</td> <td>addr[31:24].</td> <td></td> </tr>
+    <tr> <td>22:21</td> <td>msfign</td> <td>0=none: Ignore multisample flags when determining branch condition.<br />
+                                            1=p: If no multisample flags are set in the lane (a pixel in the FS, a vertex in the VS), ignore the lane's condition when computing thebranch condition.<br />
+                                            2=q: If no multisample flags are set in a 2x2 quad in the FS, ignore the quad's a/b conditions.</td> <td></td> </tr>
+    <tr> <td>20:18</td> <td>Reserved</td> <td></td> <td></td> </tr>
+    <tr> <td>17:15</td> <td>bdu</td> <td>Selects how to compute the new uniforms pointer if the branch is taken.  (ABS/REL implicitly load a uniform and use that)<br />
+                                         0=abs, 1=rel, 2=link_reg, 3=regfile</td> <td></td> </tr>
+    <tr> <td>14</td> <td>ub</td> <td>If set, then udest determines how the uniform stream will branch, otherwise the uniform stream is left as is.</td> <td></td> </tr>
+    <tr> <td>13:12</td> <td>bdi</td> <td>Selects how to compute the new IP if the branch is taken.<br />
+                                         0=abs, 1=rel, 2=link_reg, 3=regfile</td> <td></td> </tr>
+    <tr> <td>11:6</td> <td>raddr_a</td> <td>Read address of register</td> <td rowspan="4"><a href="#table-8">Table 8. Special function registers</a></td> </tr>
+    <tr> <td>5:0</td> <td>Reserved</td> <td></td> </tr>
+  </table> <br />
+
+  <table id="table-3">
+    <caption>Table 3. Add ALU opcode <sup><ref id="#sup-2">2</ref></sup></caption>
+    <tr> <th>Instruction</th> <th>opcode</th> <th>Descrtiption</th> </tr>
+    <tr> <td>fadd/faddnf</td> <td>0-47</td> <td></td> </tr>
+    <tr> <td>Reserved?</td> <td>48-52</td> <td></td> </tr>
+    <tr> <td>vfpack</td> <td>53-55, 57-59, 61-63</td> <td></td> </tr>
+    <tr> <td>add</td> <td>56</td> <td></td> </tr>
+    <tr> <td>sub</td> <td>60</td> <td></td> </tr>
+    <tr> <td>fsub</td> <td>64-111</td> <td></td> </tr>
+    <tr> <td>Reserved?</td> <td>112-119</td> <td></td> </tr>
+    <tr> <td>min</td> <td>120</td> <td></td> </tr>
+    <tr> <td>max</td> <td>121</td> <td></td> </tr>
+    <tr> <td>umin</td> <td>122</td> <td></td> </tr>
+    <tr> <td>umax</td> <td>123</td> <td></td> </tr>
+    <tr> <td>shl</td> <td>124</td> <td></td> </tr>
+    <tr> <td>shr</td> <td>125</td> <td></td> </tr>
+    <tr> <td>asr</td> <td>126</td> <td></td> </tr>
+    <tr> <td>ror</td> <td>127</td> <td></td> </tr>
+    <tr> <td>fmin/fmax</td> <td>128-175</td> <td></td> </tr>
+    <tr> <td>vfmin</td> <td>176-180</td> <td></td> </tr>
+    <tr> <td>and</td> <td>181</td> <td></td> </tr>
+    <tr> <td>or</td> <td>182</td> <td></td> </tr>
+    <tr> <td>xor</td> <td>183</td> <td></td> </tr>
+    <tr> <td>vadd</td> <td>184</td> <td></td> </tr>
+    <tr> <td>vsub</td> <td>185</td> <td></td> </tr>
+    <tr> <td>not</td> <td rowspan="7">186</td> <td>add_b=0. </td> </tr>
+    <tr> <td>neg</td> <td>add_b=1. </td> </tr>
+    <tr> <td>flapush</td> <td>add_b=2. </td> </tr>
+    <tr> <td>flbpush</td> <td>add_b=3. </td> </tr>
+    <tr> <td>flbpop</td> <td>add_b=4. </td> </tr>
+    <tr> <td>setmsf</td> <td>add_b=6. </td> </tr>
+    <tr> <td>setrevf</td> <td>add_b=7. </td> </tr>
+    <tr> <td>nop</td> <td rowspan="18">187</td> <td>add_b=0, add_a=0. </td> </tr>
+    <tr> <td>tidx</td> <td>add_b=0, add_a=1. </td> </tr>
+    <tr> <td>eidx</td> <td>add_b=0, add_a=2. </td> </tr>
+    <tr> <td>lr</td> <td>add_b=0, add_a=3. </td> </tr>
+    <tr> <td>vfla</td> <td>add_b=0, add_a=4. </td> </tr>
+    <tr> <td>vflna</td> <td>add_b=0, add_a=5. </td> </tr>
+    <tr> <td>vflb</td> <td>add_b=0, add_a=6. </td> </tr>
+    <tr> <td>vflnb</td> <td>add_b=0, add_a=7. </td> </tr>
+    <tr> <td>fxcd</td> <td>add_b=1, add_a=0-2. </td> </tr>
+    <tr> <td>xcd</td> <td>add_b=1, add_a=3. </td> </tr>
+    <tr> <td>fycd</td> <td>add_b=1, add_a=4-6. </td> </tr>
+    <tr> <td>ycd</td> <td>add_b=1, add_a=7. </td> </tr>
+    <tr> <td>msf</td> <td>add_b=2, add_a=0. </td> </tr>
+    <tr> <td>revf</td> <td>add_b=2, add_a=1. </td> </tr>
+    <tr> <td>vdwwt</td> <td>add_b=2, add_a=2. </td> </tr>
+    <tr> <td>tmuwt</td> <td>add_b=2, add_a=5. </td> </tr>
+    <tr> <td>vpmwt</td> <td>add_b=2, add_a=6. </td> </tr>
+    <tr> <td>vpmsetup</td> <td>add_b=3. </td> </tr>
+
+    <tr> <td>Reserved?</td> <td>188-191</td> <td></td> </tr>
+    <tr> <td>msf</td> <td>N/A</td> <td></td> </tr>
+    <tr> <td>revf</td> <td>N/A</td> <td></td> </tr>
+    <tr> <td>iid</td> <td>N/A</td> <td></td> </tr>
+    <tr> <td>sampid</td> <td>N/A</td> <td></td> </tr>
+    <tr> <td>patchid</td> <td>N/A</td> <td></td> </tr>
+    <tr> <td>ldvpmv</td> <td>N/A</td> <td></td> </tr>
+    <tr> <td>ldvpmd</td> <td>N/A</td> <td></td> </tr>
+    <tr> <td>ldvpmp</td> <td>N/A</td> <td></td> </tr>
+    <tr> <td>ldvpmg</td> <td>N/A</td> <td></td> </tr>
+
+    <tr> <td>fcmp</td> <td>192-239</td> <td></td> </tr>
+    <tr> <td>vfmax</td> <td>240-244</td> <td></td> </tr>
+    <tr> <td>fround</td> <td rowspan="4">245</td> <td>add_b=0-2</td> </tr>
+    <tr> <td>ftoin</td> <td>add_b=3</td> </tr>
+    <tr> <td>ftrunc</td> <td>add_b=4-6</td> </tr>
+    <tr> <td>ftoiz</td> <td>add_b=7</td> </tr>
+    <tr> <td>ffloor</td> <td rowspan="4">246</td> <td>add_b=0-2</td> </tr>
+    <tr> <td>ftouz</td> <td>add_b=3</td> </tr>
+    <tr> <td>fceil</td> <td>add_b=4-6</td> </tr>
+    <tr> <td>ftoc</td> <td>add_b=7</td> </tr>
+    <tr> <td>fdx</td> <td rowspan="2">247</td> <td>add_b=0-2</td> </tr>
+    <tr> <td>fdy</td> <td>add_b=4-6</td> </tr>
+    <tr> <td>stvpmv/stvpmd/stvpmp</td> <td>248</td> <td>Distinguished by the waddr_a field.</td> </tr>
+    <tr> <td>Reserved?</td> <td>249-251</td> <td></td> </tr>
+    <tr> <td>itof</td> <td rowspan="3">252</td> <td>add_b=0-2</td> </tr>
+    <tr> <td>clz</td> <td>add_b=3</td> </tr>
+    <tr> <td>utof</td> <td>add_b=4-6</td> </tr>
+    <tr> <td>Reserved?</td> <td>253-255</td> <td></td> </tr>
+  </table> <br />
+
+  <table id="table-4">
+    <caption>Table 4. Mul ALU opcode <sup><a href="#sup-2">2</a></sup></caption>
+    <tr> <th>Instruction</th> <th>opcode</th> <th>Descrtiption</th> </tr>
+    <tr> <td>add</td> <td>1</td> <td></td> </tr>
+    <tr> <td>sub</td> <td>2</td> <td></td> </tr>
+    <tr> <td>umul24</td> <td>3</td> <td></td> </tr>
+    <tr> <td>vfmul</td> <td>4-8</td> <td></td> </tr>
+    <tr> <td>smul24</td> <td>9</td> <td></td> </tr>
+    <tr> <td>multop</td> <td>10</td> <td></td> </tr>
+    <tr> <td>fmov</td> <td>14</td> <td></td> </tr>
+    <tr> <td>fmov</td> <td rowspan="3">15</td> <td>mul_b=0-3</td></tr>
+    <tr> <td>mov</td> <td>mul_b=4, mul_a=0</td> </tr>
+    <tr> <td>nop</td> <td>mul_b=7</td> </tr>
+    <tr> <td>fmul</td> <td>16-63</td> <td></td> </tr>
+  </table> <br />
+
+  <table id="table-5">
+    <caption>Table 5. ALU push/uniform(?)/insn. cond</caption>
+    <tr><th>Value</th><th>Description</th></tr>
+    <tr><td>0b0000000</td><td>None.</td></tr>
+    <tr><td>0b00000xx</td><td>Add ALU push condition.</td></tr>
+    <tr><td>0b000xxxx</td><td>Add ALU uniform? condition.</td></tr>
+    <tr><td>0b0010000</td><td>Invalid.</td></tr>
+    <tr><td>0b00100xx</td><td>Mul ALU push condition.</td></tr>
+    <tr><td>0b001xxxx</td><td>Mul ALU uniform? condition.</td></tr>
+    <tr><td>0b010xxyy</td><td>Add ALU instruction condition (xx) and mul ALU push condition (yy).</td></tr>
+    <tr><td>0b011xxyy</td><td>Mul ALU instruction condition (xx) and add ALU push condition (yy).</td></tr>
+    <tr><td>0b1xx00yy</td><td>Mul ALU instruction condition (xx) and add ALU instruction condition (yy).</td></tr>
+    <tr><td>0b1xxyyyy</td><td>Mul ALU instruction condition (xx) and add ALU uniform? condition (yyy).</td></tr>
+  </table> <br />
+
+  <table id="table-5-1">
+    <caption>Table 5.1. ALU push condition</caption>
+    <tr><th>Value</th><th>Description</th></tr>
+    <tr><td>0</td><td>None.</td></tr>
+    <tr><td>1</td><td>PUSHZ</td></tr>
+    <tr><td>2</td><td>PUSHN</td></tr>
+    <tr><td>3</td><td>PUSHC</td></tr>
+  </table> <br />
+
+  <table id="table-5-2">
+    <caption>Table 5.2. ALU uniform? condition</caption>
+    <tr><th>Value</th><th>Description</th></tr>
+    <tr><td>0</td><td>Invalid.</td></tr>
+    <tr><td>1</td><td>ANDZ</td></tr>
+    <tr><td>2</td><td>ANDNZ</td></tr>
+    <tr><td>3</td><td>NORNZ</td></tr>
+    <tr><td>4</td><td>NORZ</td></tr>
+    <tr><td>5</td><td>ANDNZ</td></tr>
+    <tr><td>6</td><td>ANDNN</td></tr>
+    <tr><td>7</td><td>NORNN</td></tr>
+    <tr><td>8</td><td>NORN</td></tr>
+    <tr><td>9</td><td>ANDC</td></tr>
+    <tr><td>10</td><td>ANDNC</td></tr>
+    <tr><td>11</td><td>NORNC</td></tr>
+    <tr><td>12</td><td>NORC</td></tr>
+  </table> <br />
+
+  <table id="table-5-3">
+    <caption>Table 5.3. ALU instruction condition</caption>
+    <tr><th>Value</th><th>Description</th></tr>
+    <tr><td>0</td><td>IFA</td></tr>
+    <tr><td>1</td><td>IFB</td></tr>
+    <tr><td>2</td><td>IFNA</td></tr>
+    <tr><td>3</td><td>IFNB</td></tr>
+  </table> <br />
+
+  <table id="table-6">
+    <caption>Table 6. Branch cond</caption>
+    <tr> <th>Cond</th> <th>code</th> <th>Descrtiption</th> </tr>
+    <tr> <td>always</td> <td>0</td> <td></td> </tr>
+    <tr> <td>Reserved?</td> <td>1</td> <td></td> </tr>
+    <tr> <td>a0</td> <td>2</td> <td></td> </tr>
+    <tr> <td>na0</td> <td>3</td> <td></td> </tr>
+    <tr> <td>alla</td> <td>4</td> <td></td> </tr>
+    <tr> <td>anyna</td> <td>5</td> <td></td> </tr>
+    <tr> <td>anya</td> <td>6</td> <td></td> </tr>
+    <tr> <td>allna</td> <td>7</td> <td></td> </tr>
+  </table> <br />
+
+  <table id="table-7">
+    <caption>Table 7. Instruction signal</caption>
+    <tr><th></th><th colspan="3">Writes to</th><th>&nbsp;</th></tr>
+    <tr><th>Value</th><th>r3</th><th>r4</th><th>r5</th><th>Misc</th></tr>
+    <tr><td>0</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+    <tr><td>1</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>THRSW</td></tr>
+    <tr><td>2</td><td>&nbsp;</td><td>&nbsp;</td><td>LDUNIF</td><td>&nbsp;</td></tr>
+    <tr><td>3</td><td>&nbsp;</td><td>&nbsp;</td><td>LDUNIF</td><td>THRSW</td></tr>
+    <tr><td>4</td><td>&nbsp;</td><td>LDTMU</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+    <tr><td>5</td><td>&nbsp;</td><td>LDTMU</td><td>&nbsp;</td><td>THRSW</td></tr>
+    <tr><td>6</td><td>&nbsp;</td><td>LDTMU</td><td>LDUNIF</td><td>&nbsp;</td></tr>
+    <tr><td>7</td><td>&nbsp;</td><td>LDTMU</td><td>LDUNIF</td><td>THRSW</td></tr>
+    <tr><td>8</td><td>LDVARY</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+    <tr><td>9</td><td>LDVARY</td><td>&nbsp;</td><td>&nbsp;</td><td>THRSW</td></tr>
+    <tr><td>10</td><td>LDVARY</td><td>&nbsp;</td><td>LDUNIF</td><td>&nbsp;</td></tr>
+    <tr><td>11</td><td>LDVARY</td><td>&nbsp;</td><td>LDUNIF</td><td>THRSW</td></tr>
+    <tr><td>12</td><td>LDVARY</td><td>LDTMU</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+    <tr><td>13</td><td>LDVARY</td><td>LDTMU</td><td>&nbsp;</td><td>THRSW</td></tr>
+    <tr><td>14</td><td>LDVARY</td><td>&nbsp;</td><td>&nbsp;</td><td>SMIMM</td></tr>
+    <tr><td>15</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>SMIMM</td></tr>
+    <tr><td>16</td><td>LDTLB</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+    <tr><td>17</td><td>LDTLBU</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+    <tr><td>18-21</td><td colspan="4">Reserved</td></tr>
+    <tr><td>22</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>UCB</td></tr>
+    <tr><td>23</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>ROT</td></tr>
+    <tr><td>24</td><td>LDVPM</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+    <tr><td>25</td><td>LDVPM</td><td>&nbsp;</td><td>&nbsp;</td><td>THRSW</td></tr>
+    <tr><td>26</td><td>LDVPM</td><td>&nbsp;</td><td>LDUNIF</td><td>&nbsp;</td></tr>
+    <tr><td>27</td><td>LDVPM</td><td>&nbsp;</td><td>LDUNIF</td><td>THRSW</td></tr>
+    <tr><td>28</td><td>LDVPM</td><td>LDTMU</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+    <tr><td>29</td><td>LDVPM</td><td>LDTMU</td><td>&nbsp;</td><td>THRSW</td></tr>
+    <tr><td>30</td><td>LDVPM</td><td>&nbsp;</td><td>&nbsp;</td><td>SMIMM</td></tr>
+    <tr><td>31</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>SMIMM</td></tr>
+  </table> <br />
+
+  <table id="table-8">
+    <caption>Table 8. Special function registers</caption>
+    <tr><th>Addr</th><th>Name</th></tr>
+    <tr><td>0</td><td>R0</td></tr>
+    <tr><td>1</td><td>R1</td></tr>
+    <tr><td>2</td><td>R2</td></tr>
+    <tr><td>3</td><td>R3</td></tr>
+    <tr><td>4</td><td>R4</td></tr>
+    <tr><td>5</td><td>R5</td></tr>
+    <tr><td>6</td><td>NOP</td></tr>
+    <tr><td>7</td><td>TLB</td></tr>
+    <tr><td>8</td><td>TLBU</td></tr>
+    <tr><td>9</td><td>TMU</td></tr>
+    <tr><td>10</td><td>TMUL</td></tr>
+    <tr><td>11</td><td>TMUD</td></tr>
+    <tr><td>12</td><td>TMUA</td></tr>
+    <tr><td>13</td><td>TMUAU</td></tr>
+    <tr><td>14</td><td>VPM</td></tr>
+    <tr><td>15</td><td>VPMU</td></tr>
+    <tr><td>16</td><td>SYNC</td></tr>
+    <tr><td>17</td><td>SYNCU</td></tr>
+    <tr><td>18</td><td>Reserved</td></tr>
+    <tr><td>19</td><td>RECIP</td></tr>
+    <tr><td>20</td><td>RSQRT</td></tr>
+    <tr><td>21</td><td>EXP</td></tr>
+    <tr><td>22</td><td>LOG</td></tr>
+    <tr><td>23</td><td>SIN</td></tr>
+    <tr><td>24</td><td>RSQRT2</td></tr>
+    <tr><td>25-31</td><td>Reserved?</td></tr>
+  </table> <br />
+
+  <table id="table-9">
+    <caption>Table 9. Mux</caption>
+    <tr><th>Value</th><th>Desctiption</th></tr>
+    <tr><td>0</td><td>R0</td></tr>
+    <tr><td>1</td><td>R1</td></tr>
+    <tr><td>2</td><td>R2</td></tr>
+    <tr><td>3</td><td>R3</td></tr>
+    <tr><td>4</td><td>R4</td></tr>
+    <tr><td>5</td><td>R5</td></tr>
+    <tr><td>6</td><td>A</td></tr>
+    <tr><td>7</td><td>B</td></tr>
+  </table>
+
+
+  <br />
+  <h2>References</h2>
+  <ol type="decimal">
+    <li id="ref-1">
+      Raspberry Pi Foundation, MagPi Issue 35 p.30-33, "Inside VideoCore",
+      <a href="https://www.raspberrypi.org/magpi-issues/MagPi35.pdf">
+        https://www.raspberrypi.org/magpi-issues/MagPi35.pdf
+      </a>, July 2015
+    </li>
+    <li id="ref-2">
+      Eric Anholt,
+      "broadcom: Add V3D 3.3 QPU instruction pack, unpack, and disasm.",
+      <a href="https://github.com/anholt/mesa/commit/1fb588e76d62e8bee34cf248141f120fa59598a4">
+        https://github.com/anholt/mesa/commit/1fb588e76d62e8bee34cf248141f120fa59598a4
+      </a>, 3 Feb 2017
+    </li>
+    <li id="ref-3">
+      Eric Anholt,
+      "broadcom: Add V3D 3.3 gallium driver called "vc5", for BCM7268.",
+      <a href="https://github.com/anholt/mesa/commit/6b0929535f370c493a342f1439cbbdcc112e19cb">
+        https://github.com/anholt/mesa/commit/6b0929535f370c493a342f1439cbbdcc112e19cb
+      </a>, 3 Feb 2017
+    </li>
+    <li id="ref-4">
+      Eric Anholt, "BCM7268 V3D3.3 ("vc5") driver release",
+      <a href="https://lists.freedesktop.org/archives/mesa-dev/2017-July/162087.html">
+        https://lists.freedesktop.org/archives/mesa-dev/2017-July/162087.html
+      </a>, 6 July 2017
+    </li>
+  </ol>
+
+
+  <br />
+  <h2>Footnotes</h2>
+
+  <sup id="sup-1">1. Raspberry Piに搭載されたVideoCore IVのV3Dのバージョンは
+      2.1である</sup><br />
+  <sup id="sup-2">2. If an operation doesn't use an arg or two, unused mux
+      values may be used to identify the operation type.</sup><br />
+
+
+  <br />
+  <h2>Copyright notice</h2>
+
+  <p>
+    © 2017 Idein Inc. All rights reserved.
+  </p>
+
+  <p>
+    This work is licensed under a <a rel="license" href=
+    "http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative
+    Commons Attribution-NonCommercial-ShareAlike 4.0 International
+    License</a>.
+  </p>
+
+
+</body>
+</html>
