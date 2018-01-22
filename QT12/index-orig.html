@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>QPU: TMUキャッシュの特性</title>
+  <script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+      jax: [
+        "input/TeX",
+        "output/HTML-CSS"
+      ],
+      extensions: [
+        "tex2jax.js"
+      ],
+      "TeX": {
+        extensions: [
+          "AMSmath.js",
+          "AMSsymbols.js",
+          "noErrors.js",
+          "noUndefined.js"
+        ],
+  Macros: {
+    ceil: ['\\lceil #1 \\rceil', 1]
+  }
+      },
+      "HTML-CSS": {
+        scale: 85
+      },
+      "tex2jax": {
+        inlineMath: [
+          ['$', '$']
+        ]
+      },
+    });
+  </script>
+  <script type="text/javascript" src=
+  "https://cdn.mathjax.org/mathjax/latest/MathJax.js">
+  </script>
+  <style type="text/css">
+    figure {
+      text-align: center;
+    }
+    figure figcaption {
+      text-align: center;
+    }
+    img {
+      width: 50%;
+    }
+    pre.code {
+      font-family: monospace;
+      border: solid;
+    }
+    table, th, td {
+      border: solid;
+    }
+    caption {
+      caption-side: bottom;
+    }
+    div.caption {
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>QPU: TMUキャッシュの特性</h1>
+
+  <h2>概要</h2>
+
+  <p>TMUキャッシュのラインサイズは$64$[B]であることがわかった．
+      命令キャッシュ，L2キャッシュおよびuniforms FIFOについては
+      <a href="../QI3/">QI3</a>，uniformsキャッシュについては
+      <a href="../QU16/">QU16</a>を参照せよ．</p>
+
+  <p>
+    また，TMUキャッシュヒット数はQPUのスレッドがTMUによりメモリ読み込みをするたびに，
+    TMUキャッシュミス数はTMUキャッシュがL2キャッシュからフェッチするたびに
+    カウントアップされることがわかった．
+  </p>
+
+  <h2>実験環境</h2>
+
+  <p>実験環境として Raspberry Pi 2 Model B を使用した．</p>
+
+
+  <h2>プログラムの流れ</h2>
+
+  <div id="list-1">
+    <pre class="code">nop
+nop
+nop
+nop
+mov r0, ELEM_STEP
+mov ra0, uniform_read
+iadd tmu0s, ra0, r0
+alu.ldtmu0
+mov host_int, 1
+alu.program_end
+nop
+nop</pre>
+    <div class="caption">List 1. 実行したプログラム</div>
+  </div>
+
+  <p>$ELEM\_STEP$を$[0,16]$の範囲で変化させた．プログラム中ではジャンプ命令を用いておらず，
+      $11$ 個の命令を実行するとプログラムの実行は停止する．
+      プログラムは$10$回実行し，平均値をパフォーマンスカウンタの測定値とした．</p>
+
+
+  <h2>結果</h2>
+
+  <p>パフォーマンスカウンタにより測定した
+      TMUキャッシュのヒット数を $H_{tmu}$ とし，
+      ミス数を $M_{tmu}$ とする．
+      $H_{tmu}$が$16$と一致した．
+      また，$M_{tmu}$ が $\ceil{ELEM\_STEP \times 15 + 4}$ と一致した．</p>
+
+  <p>それぞれの$N$において，
+  すべての実行におけるパフォーマンスカウンタの値が一致した(平均をとるまでもなかった)．</p>
+
+
+  <h2>考察</h2>
+
+  <p>
+    今回のプログラムにおいては，TMUによる読み込みは1回しか行なっていない．
+    また，プログラムはQPU$1$コアでしか実行していない．
+    よって，$H_{tmu}$が$16$であったことより，$H_{tmu}$はQPUの各スレッドが
+    TMUによりメモリ読み込みを行うたびにカウントアップされることがわかる．
+    すなわち，<code>tmu{0,1}s</code>を用いたメモリ読み込みを$1$QPU上で行うごとに
+    $H_{tmu}$が$16$だけカウントアップされる．
+  </p>
+
+  <p>
+    今回の$ELEM\_STEP$においては，$64$[B]単位のブロックを仮定するとTMUは
+    $\ceil{ELEM\_STEP \times 15 + 4}$ 個読み込む．
+    この値と$M_{tmu}$が一致したため，以下のことがわかる．
+  </p>
+
+  <ul>
+    <li>$M_{tmu}$ はTMUキャッシュがL2キャッシュからフェッチするたびに
+        カウントアップされる．</li>
+    <li>TMUキャッシュは$64$[B]単位でL2キャッシュからフェッチする．</li>
+  </ul>
+
+
+  <h2>Copyright notice</h2>
+
+  <p>© 2018 Yukimasa Sugizaki. All rights reserved.</p>
+
+  <p>This work is licensed under a <a rel="license" href=
+  "http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative
+  Commons Attribution-NonCommercial-ShareAlike 4.0 International
+  License</a>.</p>
+</body>
+</html>
