@@ -95,6 +95,7 @@ nop
 nop
 mov r0, ELEM_STEP
 mov ra0, uniform_read
+imul24 r0, element_number
 iadd tmu0s, ra0, r0
 alu.ldtmu0
 mov host_int, 1
@@ -104,7 +105,7 @@ nop</pre>
     <div class="caption">List 1. 実行したプログラム</div>
   </div>
 
-  <p>$ELEM\_STEP$を$[0,16]$の範囲で変化させた．プログラム中ではジャンプ命令を用いておらず，
+  <p>$ELEM\_STEP$を$[0,72]$の範囲で変化させた．プログラム中ではジャンプ命令を用いておらず，
       $11$ 個の命令を実行するとプログラムの実行は停止する．
       プログラムは$10$回実行し，平均値をパフォーマンスカウンタの測定値とした．</p>
 
@@ -115,7 +116,9 @@ nop</pre>
       TMUキャッシュのヒット数を $H_{tmu}$ とし，
       ミス数を $M_{tmu}$ とする．
       $H_{tmu}$が$16$と一致した．
-      また，$M_{tmu}$ が $\ceil{ELEM\_STEP \times 15 + 4}$ と一致した．</p>
+      また，$M_{tmu}$ が
+      $\min(\ceil{\frac{((ELEM\_STEP \times 15)\land\lnot 4) + 4}{64}}, 16)$
+      と一致した．
 
   <p>それぞれの$N$において，
   すべての実行におけるパフォーマンスカウンタの値が一致した(平均をとるまでもなかった)．</p>
@@ -134,7 +137,8 @@ nop</pre>
 
   <p>
     今回の$ELEM\_STEP$においては，$64$[B]単位のブロックを仮定するとTMUは
-    $\ceil{ELEM\_STEP \times 15 + 4}$ 個読み込む．
+    $\min(\ceil{\frac{((ELEM\_STEP \times 15)\land\lnot 4) + 4}{64}}, 16)$
+    個のブロックを読み込む．
     この値と$M_{tmu}$が一致したため，以下のことがわかる．
   </p>
 
