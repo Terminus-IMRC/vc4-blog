@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script type="text/javascript" src="../mathjax.conf"></script>
+  <script type="text/javascript" src="../MathJax/MathJax.js"></script>
+  <link rel="stylesheet" type="text/css" href="../style.css">
+
+  <title>QPU: TMUのレイテンシとTMU・L2キャッシュのサイズ</title>
+
+</head>
+
+<body>
+  <h1>QPU: TMUのレイテンシとTMU・L2キャッシュのサイズ</h1>
+
+  <h2>概要</h2>
+  <ul>
+    <li>
+      TMUによりメモリ読み込みをすると，該当するデータがキャッシュされているか否かによって
+      <a href="#tab-1">表1</a>に示すレイテンシが生じることがわかった．
+    </li>
+    <li>
+      TMU，TMUキャッシュおよびTMUに接続されたL2キャッシュが
+      QPUと同じクロックで動作していることがわかる．
+    </li>
+    <li>
+      TMUキャッシュは$4$[kB]，L2キャッシュは$16$[kB]の容量を持つことがわかった．
+    </li>
+  </ul>
+  <table id="tab-1">
+    <caption>表1. TMUによるレイテンシ</caption>
+    <tr> <th>データの場所</th> <th>レイテンシ [クロック]</th> </tr>
+    <tr> <td>TMUキャッシュ</td> <td>9</td> </tr>
+    <tr> <td>L2キャッシュ</td> <td>12</td> </tr>
+    <tr> <td>メモリ ($\mathrm{v3d\_freq}=250$[MHz])</td> <td>20</td> </tr>
+  </table>
+
+  <h2>実験環境</h2>
+  <p>
+    実験には Raspberry Pi 2 Model B を使用した．
+  </p>
+
+  <h2>実行したプログラム</h2>
+  <p>
+    実行したプログラムの流れを<a href="#list-1">リスト1</a>に示す．
+    プログラムは，TMU0を通じて$\mathrm{mlen}\times 64$[B]のメモリを
+    $64$[B]単位で読み込むという処理を<code>rep_times</code>回繰り返す．
+    $\mathrm{mlen}$は$64，128，256，512$から選び，
+    $\mathrm{rep\_times}$はQPUでのプログラム実行時間が$1$秒以上になるように選んだ．
+    また，QPUの動作クロック$\mathrm{v3d\_freq}$を$130，250，500$から選んだ．
+  </p>
+  <div id="list-1">
+    <pre class="code">nop
+nop
+nop
+nop
+mov addr_orig, unif
+Loop rep_times times {
+  mov addr, addr_orig
+  Loop mlen times {
+    mov tmu0_s, addr
+    Variable number of nops to measure latency
+    nop.ldtmu0
+    addr += 64
+  }
+}
+mov host_int, 1
+alu.program_end
+nop
+nop</pre>
+    <div class="caption">リスト1. 実行したプログラム</div>
+  </div>
+
+  <h2>結果と考察</h2>
+  <ul>
+    <li>
+      $\mathrm{v3d\_freq}=250\mathrm{[MHz]}$ (標準) のとき，
+      $\mathrm{mlen}=64$のとき$9$クロック，
+      $\mathrm{mlen}=128，256$のとき$12$クロック，
+      $\mathrm{mlen}=512$のとき$20$クロックのレイテンシが生じた．
+      <ul>
+        <li>
+          TMUキャッシュのサイズが$64\times 64 = 4096$[B]であることがわかる．
+        </li>
+        <li>
+          L2キャッシュのサイズが$256\times 64 = 16384$[B]であることがわかる．
+        </li>
+        <li>
+          TMUによるメモリ読み込みでは<a href="#tab-1">表1</a>に示す
+          レイテンシが発生することがわかる．
+        </li>
+      </ul>
+    </li>
+    <li>
+      QPUのクロック数を変化させると，
+      TMUがメモリから直接データを読み込んだ時のレイテンシのみが変化した．
+      <ul>
+        <li>
+            TMU，TMUキャッシュおよびTMUに接続されたL2キャッシュが
+            QPUと同じクロックで動作していることがわかる．
+        </li>
+      </ul>
+    </li>
+  </ul>
+
+
+  <h2>Copyright notice</h2>
+
+  <p>© 2018 Yukimasa Sugizaki. All rights reserved.</p>
+
+  <p>This work is licensed under a <a rel="license" href=
+  "http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative
+  Commons Attribution-NonCommercial-ShareAlike 4.0 International
+  License</a>.</p>
+</body>
+</html>

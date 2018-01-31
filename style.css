@@ -1,0 +1,28 @@
+figure {
+  text-align: center;
+}
+
+figure figcaption {
+  text-align: center;
+}
+
+img {
+  width: 50%;
+}
+
+pre.code {
+  font-family: monospace;
+  border: solid;
+}
+
+table, th, td {
+  border: solid;
+}
+
+caption {
+  caption-side: bottom;
+}
+
+div.caption {
+  text-align: center;
+}
