@@ -5,7 +5,7 @@
   "text/html; charset=utf-8">
   <meta name="viewport" content=
   "width=device-width, initial-scale=1">
-  <title>Description of OTP bits</title>
+  <title>Description of OTP memory</title>
   <script type="text/x-mathjax-config">
     MathJax.Hub.Config({
       jax: [
@@ -39,11 +39,12 @@
   <link rel="stylesheet" type="text/css" href="../style.css">
 </head>
 <body>
-  <h1>Description of OTP bits</h1>
+  <h1>Description of OTP memory</h1>
 	<h2> Description </h2>
 	<table>
-    <tr> <th>Address</th> <th>Bits</th> <th>Description</th> </tr>
-    <tr> <td align="right" rowspan=8>17</td> <td align="right">    1</td> <td>Set oscillator frequency to 19.2MHz</td> </tr>
+    <tr> <th>Address</th> <th>Bits</th> <th>Description</th> <th>How to program</th> </tr>
+    <tr> <td align="right" rowspan=8>17</td> <td align="right">    1</td> <td>Set oscillator frequency to 19.2MHz</td>
+        <td rowspan=8>Use <code>program_usb_boot_mode=1</code> to change from <code>1020000a</code> to <code>3020000a</code>.</td> </tr>
     <tr>                                     <td align="right">    3</td> <td>Enable pull-ups on the SDIO pins</td> </tr>
     <tr>                                     <td align="right">   19</td> <td>Enable GPIO bootmode</td> </tr>
     <tr>                                     <td align="right">   20</td> <td>Set the bank to check for GPIO bootmode</td> </tr>
@@ -52,28 +53,70 @@
     <tr>                                     <td align="right">   28</td> <td>Enable USB device booting</td> </tr>
     <tr>                                     <td align="right">   29</td> <td>Enable USB host booting (ethernet and mass storage)</td> </tr>
 
-    <tr> <td align="right" rowspan=1>28</td> <td align="right">31: 0</td> <td>Serial number</td> </tr>
-    <tr> <td align="right" rowspan=1>29</td> <td align="right">31: 0</td> <td>Bitwise inversion of serial number</td> </tr>
+    <tr> <td align="right" rowspan=1>28</td> <td align="right">31: 0</td> <td>Serial number</td> <td></td> </tr>
+    <tr> <td align="right" rowspan=1>29</td> <td align="right">31: 0</td> <td>Bitwise inversion of serial number</td> <td></td> </tr>
 
-    <tr> <td align="right" rowspan=1>30</td> <td align="right">31: 0</td> <td>Revision number</td> </tr>
+    <tr> <td align="right" rowspan=1>30</td> <td align="right">31: 0</td> <td>Revision number</td> <td></td> </tr>
 
-    <tr> <td align="right" rowspan=1>64</td> <td align="right">31: 0</td> <td rowspan=2>MAC address</td> </tr>
+    <tr> <td align="right" rowspan=1>31</td> <td align="right">  ???</td> <td>???</td>
+        <td>Use <code>program_batch_num=1</code>?</td> </tr>
+    <tr> <td align="right" rowspan=1>32</td> <td align="right">    0</td> <td>Never over voltage?</td>
+        <td>Use <code>never_over_voltage=1</code>.</td> </tr>
+
+    <tr> <td align="right" rowspan=1>36</td> <td align="right">31: 0</td> <td rowspan="8">Customer OTP</td>
+        <td rowspan="8">Use <code>SET_CUSTOMER_OTP</code> Mailbox call.</td> </tr>
+    <tr> <td align="right" rowspan=1>37</td> <td align="right">31: 0</td> </tr>
+    <tr> <td align="right" rowspan=1>38</td> <td align="right">31: 0</td> </tr>
+    <tr> <td align="right" rowspan=1>39</td> <td align="right">31: 0</td> </tr>
+    <tr> <td align="right" rowspan=1>40</td> <td align="right">31: 0</td> </tr>
+    <tr> <td align="right" rowspan=1>41</td> <td align="right">31: 0</td> </tr>
+    <tr> <td align="right" rowspan=1>42</td> <td align="right">31: 0</td> </tr>
+    <tr> <td align="right" rowspan=1>43</td> <td align="right">31: 0</td> </tr>
+
+    <tr> <td align="right" rowspan=1>64</td> <td align="right">31: 0</td> <td rowspan=2>MAC address</td>
+        <td rowspan="2">Use <code>program_mac_address=ff:ee:dd:bb:aa:99</code>.</td> </tr>
     <tr> <td align="right" rowspan=1>65</td> <td align="right">31: 0</td>                                </tr>
 
-    <tr> <td align="right" rowspan=6>66</td> <td align="right"> 6: 0</td> <td>GPIO for ETH_CLOCK output pin</td> </tr>
-    <tr>                                     <td align="right">    7</td> <td>Enable ETH_CLOCK output</td> </tr>
-    <tr>                                     <td align="right">14: 8</td> <td>GPIO for LAN_RUN output pin</td> </tr>
-    <tr>                                     <td align="right">   15</td> <td>Enable LAN_RUN output</td> </tr>
-    <tr>                                     <td align="right">   24</td> <td>Extend USB HUB timeout parameter</td> </tr>
+    <tr> <td align="right" rowspan=6>66</td> <td align="right"> 6: 0</td> <td>GPIO for ETH_CLOCK output pin</td> <td></td> </tr>
+    <tr>                                     <td align="right">    7</td> <td>Enable ETH_CLOCK output</td> <td></td> </tr>
+    <tr>                                     <td align="right">14: 8</td> <td>GPIO for LAN_RUN output pin</td> <td></td> </tr>
+    <tr>                                     <td align="right">   15</td> <td>Enable LAN_RUN output</td> <td></td> </tr>
+    <tr>                                     <td align="right">   24</td> <td>Extend USB HUB timeout parameter</td>
+        <td>Use <code>program_usb_boot_timeout=1</code>?</td> </tr>
     <tr>                                     <td align="right">   25</td> <td>ETH_CLK frequency<br/>
       0: 25MHz<br/>
-      1: 24MHz</td> </tr>
+      1: 24MHz</td> <td></td> </tr>
 	</table><br>
+
+
+  <h2>Other OTP programming methods (TBD on the above table)</h2>
+
+  <ul>
+    <li><code>program_board_rev</code></li>
+    <li><code>program_emmc_boot</code>
+      <ul>
+        <li>"It's used for CM3 just to help get around a bug in the bootrom"</li>
+      </ul>
+    </li>
+    <li><code>program_gpio_bootmode</code>
+      <ul>
+        <li>Sets GPIO bootmode.  <code>1</code> to select 22-26 and <code>2</code> to select 39-43.</li>
+      </ul>
+    </li>
+    <li><code>program_serial_number</code></li>
+    <li><code>program_serial_random</code></li>
+    <li>Writing <code>0xffffffff 0xaffe0000</code> to lock customer OTP.</li>
+  </ul>
 
 
   <h2>References</h2>
 		<ul>
-      <li>Gordon Hollingworth, "[Question] What are the other OTP Values? · Issue #974 · raspberrypi/firmware", <a href="https://github.com/raspberrypi/firmware/issues/974#issuecomment-381533379">https://github.com/raspberrypi/firmware/issues/974#issuecomment-381533379</a></li>
+      <li>Gordon Hollingworth, "[Question] What are the other OTP Values? · Issue #974 · raspberrypi/firmware", <a href="https://github.com/raspberrypi/firmware/issues/974">https://github.com/raspberrypi/firmware/issues/974</a></li>
+      <li>Raspberry Pi Foundation, "Boot flow - Raspberry Pi Documentation", <a href="https://www.raspberrypi.org/documentation/hardware/raspberrypi/bootmodes/bootflow.md">https://www.raspberrypi.org/documentation/hardware/raspberrypi/bootmodes/bootflow.md</a></li>
+      <li>Raspberry Pi Foundation, "How to boot from a USB mass storage device on a Raspberry Pi - Raspberry Pi Documentation", <a href="https://www.raspberrypi.org/documentation/hardware/raspberrypi/bootmodes/msd.md">https://www.raspberrypi.org/documentation/hardware/raspberrypi/bootmodes/msd.md</a></li>
+      <li>Raspberry Pi Foundation, "Industrial use of the Raspberry Pi - Raspberry Pi Documentation", <a href="https://www.raspberrypi.org/documentation/hardware/industrial/README.md">https://www.raspberrypi.org/documentation/hardware/industrial/README.md</a></li>
+      <li>Raspberry Pi Foundation, "Mailbox property interface · raspberrypi/firmware Wiki", <a href="https://github.com/raspberrypi/firmware/wiki/Mailbox-property-interface">https://github.com/raspberrypi/firmware/wiki/Mailbox-property-interface</a></li>
+      <li>Broadcom, "linux/include/soc/bcm2835/raspberrypi-firmware.h at rpi-4.14.y · raspberrypi/linux", <a href="https://github.com/raspberrypi/linux/blob/rpi-4.14.y/include/soc/bcm2835/raspberrypi-firmware.h">https://github.com/raspberrypi/linux/blob/rpi-4.14.y/include/soc/bcm2835/raspberrypi-firmware.h</a></li>
 		</ul>
 
 
